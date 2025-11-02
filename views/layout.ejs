@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : "Netflix Clone" %></title>
+  
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  
+  <!-- Custom Netflix CSS -->
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  
+  <!-- NAVBAR -->
+  <nav class="navbar navbar-expand-lg navbar-dark" id="mainNav">
+    <div class="container-fluid">
+      <!-- Logo -->
+      <a href="/" class="navbar-brand">NETFLIX</a>
+      
+      <!-- Navbar Toggle for Mobile -->
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <!-- Navbar Content -->
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <% if (typeof user !== 'undefined' && user) { %>
+            <li class="nav-item">
+              <a class="nav-link" href="/">דף הבית</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/search">חיפוש</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/settings">הגדרות</a>
+            </li>
+            <% if (user.email === 'admin') { %>
+              <li class="nav-item">
+                <a class="nav-link text-warning" href="/admin/add">
+                  <i class="bi bi-plus-circle"></i> הוסף תוכן
+                </a>
+              </li>
+            <% } %>
+          <% } %>
+        </ul>
+        
+        <!-- User Info / Login Button -->
+        <div class="d-flex align-items-center gap-3">
+          <% if (typeof user !== 'undefined' && user) { %>
+            <span class="text-light">
+              <i class="bi bi-person-circle"></i>
+              שלום, <%= user.username || user.email %>
+            </span>
+            <a href="/logout" class="btn btn-outline-light btn-sm">
+              <i class="bi bi-box-arrow-right"></i> יציאה
+            </a>
+          <% } else { %>
+            <a href="/login" class="btn btn-outline-light btn-sm">התחבר</a>
+            <a href="/register" class="btn btn-netflix btn-sm">הרשם</a>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="container">
+    <%- body %>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-muted py-4 mt-5">
+    <p>&copy; 2025 Netflix Clone - פרויקט גמר</p>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Navbar Scroll Effect -->
+  <script>
+    window.addEventListener('scroll', function() {
+      const navbar = document.getElementById('mainNav');
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+    });
+  </script>
+  
+  <!-- Additional Page Scripts -->
+  <% if (typeof pageScript !== 'undefined') { %>
+    <%- pageScript %>
+  <% } %>
+</body>
+</html>

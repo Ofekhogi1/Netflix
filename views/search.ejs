@@ -1,0 +1,107 @@
+<!-- SEARCH PAGE -->
+<div class="search-container">
+  <h1 class="mb-4">
+    <i class="bi bi-search"></i> חיפוש תכנים
+  </h1>
+
+  <!-- Search Form -->
+  <form action="/search" method="GET" class="mb-4">
+    <div class="input-group input-group-lg">
+      <input 
+        type="text" 
+        name="q" 
+        class="form-control search-input" 
+        placeholder="חפש סרטים, סדרות, שחקנים..."
+        value="<%= typeof q !== 'undefined' ? q : '' %>"
+        autofocus
+      />
+      <button class="btn btn-netflix" type="submit">
+        <i class="bi bi-search"></i> חפש
+      </button>
+    </div>
+  </form>
+
+  <!-- Results -->
+  <% if (typeof q !== 'undefined' && q) { %>
+    <div class="search-results">
+      <h3 class="section-title mb-3">
+        תוצאות עבור: "<%= q %>"
+        <span class="text-muted">(<%= results.length %> תוצאות)</span>
+      </h3>
+
+      <% if (results.length > 0) { %>
+        <div class="row g-3">
+          <% results.forEach(item => { %>
+            <div class="col-6 col-md-3 col-lg-2">
+              <div class="content-card">
+                <a href="/content/<%= item._id %>">
+                  <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+                </a>
+                <div class="content-card-body">
+                  <h5 class="content-card-title"><%= item.title %></h5>
+                  <% if (item.year) { %>
+                    <small class="text-muted d-block mb-2">
+                      <i class="bi bi-calendar3"></i> <%= item.year %>
+                    </small>
+                  <% } %>
+                  <div class="d-flex gap-2">
+                    <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                      <i class="bi bi-play-fill"></i>
+                    </a>
+                    <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                      <i class="bi bi-info-circle"></i>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="text-center py-5">
+          <i class="bi bi-search" style="font-size: 4rem; color: #666;"></i>
+          <h4 class="mt-3">לא נמצאו תוצאות</h4>
+          <p class="text-muted">נסה לחפש משהו אחר</p>
+        </div>
+      <% } %>
+    </div>
+  <% } else { %>
+    <!-- Popular Searches / Suggestions -->
+    <div class="text-center py-5">
+      <i class="bi bi-search" style="font-size: 4rem; color: #666;"></i>
+      <h4 class="mt-3">מה תרצה לצפות היום?</h4>
+      <p class="text-muted">חפש את הסרט, הסדרה או השחקן האהוב עליך</p>
+    </div>
+  <% } %>
+</div>
+
+<style>
+.search-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.search-input {
+  background-color: var(--netflix-gray) !important;
+  border: 2px solid var(--netflix-gray) !important;
+  color: white !important;
+  padding: 1rem 1.5rem !important;
+  font-size: 1.1rem !important;
+}
+
+.search-input:focus {
+  background-color: #454545 !important;
+  border-color: var(--netflix-red) !important;
+  box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25) !important;
+  color: white !important;
+}
+
+.search-input::placeholder {
+  color: #8c8c8c;
+}
+
+.search-results {
+  margin-top: 2rem;
+}
+</style>
