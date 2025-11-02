@@ -1,0 +1,221 @@
+<!-- HERO BANNER -->
+<% if (typeof contents !== 'undefined' && contents.length > 0) { %>
+  <section class="content-hero" style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('<%= contents[0].imageUrl || "/img/placeholder.png" %>');">
+    <div class="content-hero-content">
+      <h1><%= contents[0].title %></h1>
+      <p><%= contents[0].description || 'צפה עכשיו בתוכן הכי חם' %></p>
+      <div>
+        <a href="/player/<%= contents[0]._id %>" class="btn btn-play">
+          <i class="bi bi-play-fill"></i> נגן
+        </a>
+        <a href="/content/<%= contents[0]._id %>" class="btn btn-info">
+          <i class="bi bi-info-circle"></i> מידע נוסף
+        </a>
+      </div>
+    </div>
+  </section>
+<% } %>
+
+<!-- CONTINUE WATCHING -->
+<% if (typeof continueWatching !== 'undefined' && continueWatching.length > 0) { %>
+  <section class="feed-section">
+    <h2 class="section-title">
+      <i class="bi bi-arrow-clockwise"></i> המשך צפייה
+    </h2>
+    <div class="content-row">
+      <% continueWatching.forEach(item => { %>
+        <div class="content-card">
+          <a href="/player/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="progress" style="height: 5px; margin-bottom: 0.5rem;">
+              <div class="progress-bar bg-danger" style="width: <%= item.watchProgress || 0 %>%"></div>
+            </div>
+            <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+              <i class="bi bi-play-fill"></i> המשך
+            </a>
+            <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+              <i class="bi bi-info-circle"></i>
+            </a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<!-- POPULAR CONTENT -->
+<section class="feed-section">
+  <h2 class="section-title">
+    <i class="bi bi-fire"></i> פופולרי עכשיו
+  </h2>
+  <div class="content-row">
+    <% if (typeof contents !== 'undefined' && contents.length > 0) { %>
+      <% contents.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="d-flex gap-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i> נגן
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="col-12 text-center py-5">
+        <i class="bi bi-film" style="font-size: 4rem; color: #666;"></i>
+        <p class="text-muted mt-3">אין תוכן זמין כרגע</p>
+        <% if (user && user.isAdmin) { %>
+          <a href="/admin/add" class="btn btn-netflix mt-2">
+            <i class="bi bi-plus-circle"></i> הוסף תוכן
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<!-- NEW RELEASES -->
+<% if (typeof contents !== 'undefined' && contents.length > 0) { %>
+  <section class="feed-section">
+    <h2 class="section-title">
+      <i class="bi bi-star-fill"></i> חדש ב-Netflix
+    </h2>
+    <div class="content-row">
+      <% contents.slice(0, 10).forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <% if (item.year) { %>
+              <small class="text-muted">
+                <i class="bi bi-calendar3"></i> <%= item.year %>
+              </small>
+            <% } %>
+            <div class="d-flex gap-2 mt-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i>
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<!-- GENRES PREVIEW -->
+<% 
+const genres = ['Action', 'Drama', 'Comedy', 'Thriller', 'Romance'];
+if (typeof contents !== 'undefined' && contents.length > 0) {
+  genres.forEach(genre => {
+    const genreItems = contents.filter(c => c.genres && c.genres.includes(genre)).slice(0, 6);
+    if (genreItems.length > 0) {
+%>
+  <section class="feed-section">
+    <h2 class="section-title">
+      <%= genre %>
+      <a href="/genre/<%= genre %>" class="float-end text-netflix-red" style="font-size: 0.9rem;">
+        צפה בכל <i class="bi bi-chevron-left"></i>
+      </a>
+    </h2>
+    <div class="content-row">
+      <% genreItems.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="d-flex gap-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i>
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<%
+    }
+  });
+}
+%>
+
+<style>
+/* Additional Feed Styles */
+.content-hero {
+  position: relative;
+  height: 70vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 3rem 4%;
+  margin: -80px -4% 2rem -4%;
+  border-radius: 0;
+}
+
+.content-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to top, var(--netflix-black) 0%, transparent 50%);
+}
+
+.content-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+}
+
+.content-hero h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.content-hero p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+  color: var(--netflix-light-gray);
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+@media (max-width: 768px) {
+  .content-hero {
+    height: 50vh;
+  }
+  
+  .content-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .content-hero p {
+    font-size: 1rem;
+  }
+}
+</style>

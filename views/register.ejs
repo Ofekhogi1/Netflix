@@ -1,0 +1,103 @@
+<div class="auth-wrapper">
+  <div class="auth-box">
+    <h2>הרשמה</h2>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <%= error %>
+      </div>
+    <% } %>
+
+    <form action="/register" method="POST">
+      <div class="mb-3">
+        <label for="username" class="form-label">שם משתמש</label>
+        <input 
+          type="text" 
+          name="username" 
+          id="username" 
+          class="form-control" 
+          placeholder="בחר שם משתמש"
+          required 
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="email" class="form-label">אימייל</label>
+        <input 
+          type="email" 
+          name="email" 
+          id="email" 
+          class="form-control" 
+          placeholder="name@example.com"
+          required 
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">סיסמה</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="password" 
+          class="form-control" 
+          placeholder="לפחות 6 תווים"
+          minlength="6"
+          required 
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="confirmPassword" class="form-label">אימות סיסמה</label>
+        <input 
+          type="password" 
+          name="confirmPassword" 
+          id="confirmPassword" 
+          class="form-control" 
+          placeholder="הכנס את הסיסמה שוב"
+          minlength="6"
+          required 
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-person-plus-fill"></i> הירשם
+      </button>
+    </form>
+
+    <div class="text-center text-muted mt-4">
+      כבר יש לך חשבון? <a href="/login">התחבר כאן</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Override main container for auth pages */
+  main.container {
+    margin-top: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Hide navbar on auth pages */
+  #mainNav {
+    display: none;
+  }
+  
+  footer {
+    display: none;
+  }
+</style>
+
+<script>
+  // Client-side password validation
+  document.querySelector('form').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    if (password !== confirmPassword) {
+      e.preventDefault();
+      alert('הסיסמאות אינן תואמות!');
+    }
+  });
+</script>

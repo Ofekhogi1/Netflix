@@ -1,0 +1,186 @@
+<!-- GENRE PAGE -->
+
+<div class="genre-page">
+  <div class="genre-header">
+    <h1>
+      <i class="bi bi-collection-play"></i> <%= genre %>
+    </h1>
+    <p class="text-muted">גלה את כל התכנים בקטגוריה</p>
+  </div>
+
+  <!-- Content Grid -->
+  <div id="contentGrid" class="content-grid">
+    <% if (contents && contents.length > 0) { %>
+      <% contents.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <% if (item.year) { %>
+              <small class="text-muted">
+                <i class="bi bi-calendar3"></i> <%= item.year %>
+              </small>
+            <% } %>
+            <div class="d-flex gap-2 mt-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i>
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } %>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div id="loadingIndicator" class="text-center py-4" style="display: none;">
+    <div class="spinner-border text-danger" role="status">
+      <span class="visually-hidden">טוען...</span>
+    </div>
+  </div>
+
+  <!-- No More Content -->
+  <div id="noMoreContent" class="text-center py-4" style="display: none;">
+    <i class="bi bi-check-circle" style="font-size: 3rem; color: var(--netflix-red);"></i>
+    <p class="text-muted mt-2">זה הכל! אין עוד תכנים להציג</p>
+  </div>
+</div>
+
+<style>
+.genre-page {
+  padding: 2rem 4%;
+  min-height: 100vh;
+}
+
+.genre-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--netflix-gray);
+}
+
+.genre-header h1 {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .genre-page {
+    padding: 2rem 2%;
+  }
+  
+  .genre-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+}
+</style>
+
+<script>
+// Infinite Scroll Implementation
+let skip = <%= contents.length %>;
+const genre = '<%= genre %>';
+const batchSize = 12;
+let loading = false;
+let noMore = false;
+
+// Intersection Observer for infinite scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting && !loading && !noMore) {
+      loadMoreContent();
+    }
+  });
+}, {
+  rootMargin: '100px'
+});
+
+// Observe the loading indicator
+const loadingIndicator = document.getElementById('loadingIndicator');
+observer.observe(loadingIndicator);
+
+async function loadMoreContent() {
+  if (loading || noMore) return;
+  
+  loading = true;
+  loadingIndicator.style.display = 'block';
+  
+  try {
+    const response = await fetch(`/api/genre/${encodeURIComponent(genre)}?skip=${skip}&limit=${batchSize}`);
+    const data = await response.json();
+    
+    if (data.items && data.items.length > 0) {
+      const grid = document.getElementById('contentGrid');
+      
+      data.items.forEach(item => {
+        const card = createContentCard(item);
+        grid.appendChild(card);
+      });
+      
+      skip += data.items.length;
+      
+      if (data.items.length < batchSize) {
+        noMore = true;
+        document.getElementById('noMoreContent').style.display = 'block';
+      }
+    } else {
+      noMore = true;
+      document.getElementById('noMoreContent').style.display = 'block';
+    }
+  } catch (error) {
+    console.error('Error loading more content:', error);
+  } finally {
+    loading = false;
+    loadingIndicator.style.display = 'none';
+  }
+}
+
+function createContentCard(item) {
+  const card = document.createElement('div');
+  card.className = 'content-card';
+  
+  card.innerHTML = `
+    <a href="/content/${item._id}">
+      <img src="${item.imageUrl || '/img/placeholder.png'}" alt="${item.title}">
+    </a>
+    <div class="content-card-body">
+      <h5 class="content-card-title">${item.title}</h5>
+      ${item.year ? `<small class="text-muted"><i class="bi bi-calendar3"></i> ${item.year}</small>` : ''}
+      <div class="d-flex gap-2 mt-2">
+        <a href="/player/${item._id}" class="btn btn-play btn-sm">
+          <i class="bi bi-play-fill"></i>
+        </a>
+        <a href="/content/${item._id}" class="btn btn-info btn-sm">
+          <i class="bi bi-info-circle"></i>
+        </a>
+      </div>
+    </div>
+  `;
+  
+  return card;
+}
+
+// Show loading indicator initially if there might be more content
+if (skip > 0) {
+  loadingIndicator.style.display = 'block';
+}
+</script>

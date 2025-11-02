@@ -1,0 +1,166 @@
+<!-- CONTENT DETAIL PAGE -->
+
+<!-- Hero Section -->
+<div class="content-detail-hero" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(20,20,20,1)), url('<%= content.imageUrl || "/img/placeholder.png" %>');">
+  <div class="content-detail-info">
+    <h1 class="display-4 fw-bold"><%= content.title %></h1>
+    
+    <!-- Meta Info -->
+    <div class="content-meta mb-3">
+      <% if (content.year) { %>
+        <span><i class="bi bi-calendar3"></i> <%= content.year %></span>
+      <% } %>
+      <% if (content.genres && content.genres.length > 0) { %>
+        <% content.genres.forEach(genre => { %>
+          <span><%= genre %></span>
+        <% }) %>
+      <% } %>
+    </div>
+
+    <!-- Description -->
+    <% if (content.description) { %>
+      <p class="lead mb-4"><%= content.description %></p>
+    <% } %>
+
+    <!-- Action Buttons -->
+    <div class="d-flex gap-3 mb-3">
+      <a href="/player/<%= content._id %>" class="btn btn-play btn-lg">
+        <i class="bi bi-play-fill"></i> נגן
+      </a>
+      <button class="btn btn-info btn-lg" onclick="toggleLike('<%= content._id %>')">
+        <i class="bi bi-heart" id="like-icon-<%= content._id %>"></i> אהבתי
+      </button>
+    </div>
+
+    <!-- Additional Info -->
+    <div class="content-additional-info">
+      <% if (content.director) { %>
+        <p><strong>במאי:</strong> <%= content.director %></p>
+      <% } %>
+      <% if (content.actors && content.actors.length > 0) { %>
+        <p>
+          <strong>שחקנים:</strong> 
+          <% content.actors.forEach((actor, index) => { %>
+            <a href="https://he.wikipedia.org/wiki/<%= encodeURIComponent(actor) %>" 
+               target="_blank" 
+               class="text-light text-decoration-none">
+              <%= actor %><%= index < content.actors.length - 1 ? ', ' : '' %>
+            </a>
+          <% }) %>
+        </p>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Similar Content -->
+<section class="similar-content mt-5">
+  <h2 class="section-title">תכנים דומים</h2>
+  <div class="content-row">
+    <% 
+    // זה placeholder - בפועל תשלוף מה-DB
+    for(let i = 0; i < 6; i++) { 
+    %>
+      <div class="content-card">
+        <a href="#">
+          <img src="https://via.placeholder.com/300x450/141414/ffffff?text=Similar+Content" alt="Similar">
+        </a>
+        <div class="content-card-body">
+          <h5 class="content-card-title">תוכן דומה <%= i + 1 %></h5>
+          <div class="d-flex gap-2">
+            <a href="#" class="btn btn-play btn-sm">
+              <i class="bi bi-play-fill"></i>
+            </a>
+            <a href="#" class="btn btn-info btn-sm">
+              <i class="bi bi-info-circle"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<style>
+.content-detail-hero {
+  position: relative;
+  min-height: 70vh;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 3rem 4%;
+  margin: -80px -4% 2rem -4%;
+}
+
+.content-detail-info {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+}
+
+.content-detail-info h1 {
+  font-size: 3.5rem;
+  text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+  margin-bottom: 1rem;
+}
+
+.content-detail-info .lead {
+  font-size: 1.2rem;
+  color: var(--netflix-light-gray);
+  text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
+}
+
+.content-additional-info {
+  background-color: rgba(0,0,0,0.6);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+}
+
+.content-additional-info p {
+  margin-bottom: 0.5rem;
+  color: var(--netflix-light-gray);
+}
+
+.content-additional-info strong {
+  color: white;
+}
+
+.similar-content {
+  padding: 0 4%;
+  margin-bottom: 3rem;
+}
+
+@media (max-width: 768px) {
+  .content-detail-hero {
+    min-height: 50vh;
+  }
+  
+  .content-detail-info h1 {
+    font-size: 2rem;
+  }
+}
+</style>
+
+<script>
+// Like functionality
+function toggleLike(contentId) {
+  fetch(`/api/content/${contentId}/like`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ok) {
+      const icon = document.getElementById(`like-icon-${contentId}`);
+      icon.classList.toggle('bi-heart');
+      icon.classList.toggle('bi-heart-fill');
+      icon.style.color = icon.classList.contains('bi-heart-fill') ? 'var(--netflix-red)' : 'white';
+    }
+  })
+  .catch(err => console.error('Like error:', err));
+}
+</script>
