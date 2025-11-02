@@ -1,0 +1,68 @@
+<div class="auth-wrapper">
+  <div class="auth-box">
+    <h2>התחברות</h2>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <%= error %>
+      </div>
+    <% } %>
+
+    <form action="/login" method="POST">
+      <div class="mb-3">
+        <label for="email" class="form-label">אימייל</label>
+        <input 
+          type="email" 
+          name="email" 
+          id="email" 
+          class="form-control" 
+          placeholder="name@example.com"
+          required 
+        />
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">סיסמה</label>
+        <input 
+          type="password" 
+          name="password" 
+          id="password" 
+          class="form-control" 
+          placeholder="הכנס סיסמה"
+          required 
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> התחבר
+      </button>
+    </form>
+
+    <div class="text-center text-muted mt-4">
+      חדש ב-Netflix? <a href="/register">הירשם עכשיו</a>
+    </div>
+
+    <div class="text-center text-muted mt-3" style="font-size: 0.85rem;">
+      <small>למשתמש מנהל: admin / admin</small>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Override main container for auth pages */
+  main.container {
+    margin-top: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  
+  /* Hide navbar on auth pages */
+  #mainNav {
+    display: none;
+  }
+  
+  footer {
+    display: none;
+  }
+</style>

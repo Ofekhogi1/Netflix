@@ -1,0 +1,408 @@
+<!-- SETTINGS & STATISTICS PAGE -->
+
+<div class="settings-container">
+  <h1 class="mb-4">
+    <i class="bi bi-gear-fill"></i> הגדרות וסטטיסטיקות
+  </h1>
+
+  <!-- User Info -->
+  <section class="settings-section">
+    <h3>פרטי חשבון</h3>
+    <div class="info-box">
+      <p><strong>שם משתמש:</strong> <%= user.username %></p>
+      <p><strong>אימייל:</strong> <%= user.email %></p>
+      <p><strong>סוג חשבון:</strong> <%= user.isAdmin ? 'מנהל' : 'משתמש רגיל' %></p>
+    </div>
+  </section>
+
+  <!-- Profiles Management -->
+  <section class="settings-section">
+    <h3>
+      <i class="bi bi-person-circle"></i> ניהול פרופילים
+      <span class="text-muted">(עד 5 פרופילים)</span>
+    </h3>
+    
+    <div class="profile-grid">
+      <% if (user.profiles && user.profiles.length > 0) { %>
+        <% user.profiles.forEach(profile => { %>
+          <div class="profile-item">
+            <div class="profile-avatar">
+              <%= profile.name.charAt(0).toUpperCase() %>
+            </div>
+            <p class="profile-name"><%= profile.name %></p>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteProfile('<%= profile._id %>')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        <% }) %>
+      <% } %>
+
+      <!-- Add New Profile -->
+      <% if (!user.profiles || user.profiles.length < 5) { %>
+        <div class="profile-item profile-item-add" onclick="showAddProfileModal()">
+          <div class="profile-avatar profile-add">
+            <i class="bi bi-plus-lg"></i>
+          </div>
+          <p class="profile-name">הוסף פרופיל</p>
+        </div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- Statistics -->
+  <section class="settings-section">
+    <h3>
+      <i class="bi bi-bar-chart-fill"></i> סטטיסטיקות צפייה
+    </h3>
+
+    <div class="row g-4">
+      <!-- Daily Views Chart -->
+      <div class="col-md-6">
+        <div class="chart-container">
+          <h5>צפיות יומיות (שבוע אחרון)</h5>
+          <canvas id="dailyViewsChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Genre Popularity Chart -->
+      <div class="col-md-6">
+        <div class="chart-container">
+          <h5>פופולריות לפי ז'אנר</h5>
+          <canvas id="genreChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Liked Content -->
+  <section class="settings-section">
+    <h3>
+      <i class="bi bi-heart-fill text-danger"></i> תכנים שאהבתי
+    </h3>
+    <div class="content-row" id="likedContent">
+      <% if (user.likes && user.likes.length > 0) { %>
+        <% user.likes.forEach(content => { %>
+          <div class="content-card">
+            <a href="/content/<%= content._id || content %>">
+              <img src="<%= content.imageUrl || '/img/placeholder.png' %>" alt="<%= content.title || 'Liked Content' %>">
+            </a>
+            <div class="content-card-body">
+              <h5 class="content-card-title"><%= content.title || 'תוכן שאהבתי' %></h5>
+              <div class="d-flex gap-2">
+                <a href="/player/<%= content._id || content %>" class="btn btn-play btn-sm">
+                  <i class="bi bi-play-fill"></i>
+                </a>
+                <a href="/content/<%= content._id || content %>" class="btn btn-info btn-sm">
+                  <i class="bi bi-info-circle"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        <% }) %>
+      <% } else { %>
+        <div class="text-center py-5 w-100">
+          <i class="bi bi-heart" style="font-size: 4rem; color: #666;"></i>
+          <p class="text-muted mt-3">עדיין לא אהבת אף תוכן</p>
+        </div>
+      <% } %>
+    </div>
+  </section>
+</div>
+
+<!-- Add Profile Modal -->
+<div class="modal fade" id="addProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-netflix-dark">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">הוסף פרופיל חדש</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form action="/profiles" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="profileName" class="form-label">שם הפרופיל</label>
+            <input 
+              type="text" 
+              name="name" 
+              id="profileName" 
+              class="form-control" 
+              placeholder="למשל: ילדים, אבא, אמא..."
+              required
+              maxlength="20"
+            />
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+          <button type="submit" class="btn btn-netflix">צור פרופיל</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+.settings-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.settings-section {
+  background-color: var(--netflix-dark);
+  border-radius: 8px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.settings-section h3 {
+  color: white;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.info-box {
+  background-color: var(--netflix-gray);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.info-box p {
+  color: var(--netflix-light-gray);
+  margin-bottom: 0.5rem;
+}
+
+.info-box strong {
+  color: white;
+}
+
+/* Profile Grid */
+.profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1.5rem;
+}
+
+.profile-item {
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.profile-item-add:hover {
+  transform: scale(1.05);
+}
+
+.profile-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--netflix-red), #b20710);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  font-weight: bold;
+  color: white;
+  margin: 0 auto 0.5rem;
+  transition: var(--transition);
+}
+
+.profile-avatar.profile-add {
+  background: var(--netflix-gray);
+}
+
+.profile-item:hover .profile-avatar {
+  border: 3px solid white;
+}
+
+.profile-name {
+  color: var(--netflix-light-gray);
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Charts */
+.chart-container {
+  background-color: var(--netflix-gray);
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.chart-container h5 {
+  color: white;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+/* Modal Styles */
+.modal-content.bg-netflix-dark {
+  background-color: var(--netflix-dark);
+  border: 1px solid var(--netflix-gray);
+}
+
+.modal-title {
+  color: white;
+}
+
+.modal-body .form-label {
+  color: var(--netflix-light-gray);
+}
+
+.modal-body .form-control {
+  background-color: var(--netflix-gray);
+  border: 1px solid var(--netflix-gray);
+  color: white;
+}
+
+.modal-body .form-control:focus {
+  background-color: #454545;
+  border-color: var(--netflix-red);
+  color: white;
+  box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .profile-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  
+  .profile-avatar {
+    width: 100px;
+    height: 100px;
+    font-size: 2.5rem;
+  }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Show Add Profile Modal
+function showAddProfileModal() {
+  const modal = new bootstrap.Modal(document.getElementById('addProfileModal'));
+  modal.show();
+}
+
+// Delete Profile
+async function deleteProfile(profileId) {
+  if (!confirm('האם אתה בטוח שברצונך למחוק פרופיל זה?')) return;
+  
+  try {
+    const response = await fetch(`/profiles/${profileId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (response.ok) {
+      location.reload();
+    } else {
+      alert('שגיאה במחיקת הפרופיל');
+    }
+  } catch (error) {
+    console.error('Error deleting profile:', error);
+    alert('שגיאה במחיקת הפרופיל');
+  }
+}
+
+// Load Statistics
+async function loadStatistics() {
+  const userId = '<%= user._id %>';
+  
+  try {
+    // Fetch daily views
+    const dailyResponse = await fetch(`/api/stats/${userId}/daily`);
+    const dailyData = await dailyResponse.json();
+    
+    // Fetch genre stats
+    const genreResponse = await fetch(`/api/stats/genres/${userId}`);
+    const genreData = await genreResponse.json();
+    
+    // Create Daily Views Chart
+    const dailyCtx = document.getElementById('dailyViewsChart').getContext('2d');
+    new Chart(dailyCtx, {
+      type: 'bar',
+      data: {
+        labels: dailyData.labels,
+        datasets: [{
+          label: 'צפיות',
+          data: dailyData.values,
+          backgroundColor: 'rgba(229, 9, 20, 0.8)',
+          borderColor: 'rgba(229, 9, 20, 1)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#999',
+              stepSize: 1
+            },
+            grid: {
+              color: 'rgba(255, 255, 255, 0.1)'
+            }
+          },
+          x: {
+            ticks: {
+              color: '#999'
+            },
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    // Create Genre Chart
+    const genreCtx = document.getElementById('genreChart').getContext('2d');
+    new Chart(genreCtx, {
+      type: 'doughnut',
+      data: {
+        labels: genreData.labels,
+        datasets: [{
+          data: genreData.values,
+          backgroundColor: [
+            'rgba(229, 9, 20, 0.8)',
+            'rgba(229, 9, 20, 0.6)',
+            'rgba(229, 9, 20, 0.4)',
+            'rgba(229, 9, 20, 0.2)'
+          ],
+          borderColor: '#141414',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#999',
+              padding: 15
+            }
+          }
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error loading statistics:', error);
+  }
+}
+
+// Load stats on page load
+document.addEventListener('DOMContentLoaded', loadStatistics);
+</script>
