@@ -11,9 +11,6 @@ const PORT = process.env.PORT || 3000;
 const PAGE_SIZE = parseInt(process.env.PAGE_SIZE || '12');
 const INFINITE_BATCH = parseInt(process.env.INFINITE_SCROLL_BATCH || '8');
 
-// ==========================================
-// DATABASE CONNECTION
-// ==========================================
 const mongoOptions = {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -39,17 +36,11 @@ mongoose.connect(
   console.log('4. Verify username/password are correct\n');
 });
 
-// ==========================================
-// MODELS
-// ==========================================
 const User = require('./models/User');
 const Content = require('./models/Content');
 const Profile = require('./models/Profile');
 const Watch = require('./models/WatchHistory');
 
-// ==========================================
-// MIDDLEWARES
-// ==========================================
 const expressLayouts = require('express-ejs-layouts');
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -60,7 +51,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Session
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'devsecret',
   resave: false,
@@ -70,15 +61,11 @@ app.use(session({
   })
 }));
 
-// Make user available in all views
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
 
-// ==========================================
-// AUTH MIDDLEWARE
-// ==========================================
 function requireAuth(req, res, next) {
   if (req.session && req.session.userId) return next();
   return res.redirect('/login');
@@ -89,16 +76,10 @@ function requireAdmin(req, res, next) {
   return res.status(403).send('Forbidden: admin only');
 }
 
-// ==========================================
-// AUTH ROUTES
-// ==========================================
-
-// Login page
 app.get('/login', (req, res) => {
   res.render('login', { error: null });
 });
 
-// Login POST
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -134,12 +115,12 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Register page
+
 app.get('/register', (req, res) => {
   res.render('register', { error: null });
 });
 
-// Register POST
+
 app.post('/register', async (req, res) => {
   try {
     const { username, email, password, confirmPassword } = req.body;
@@ -186,7 +167,6 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Logout
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) console.error('Logout error:', err);
@@ -194,11 +174,6 @@ app.get('/logout', (req, res) => {
   });
 });
 
-// ==========================================
-// MAIN ROUTES
-// ==========================================
-
-// Home / Feed
 app.get('/', async (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
   
@@ -211,7 +186,6 @@ app.get('/', async (req, res) => {
   }
 });
 
-// Search
 app.get('/search', requireAuth, async (req, res) => {
   try {
     const q = req.query.q || '';
@@ -223,13 +197,11 @@ app.get('/search', requireAuth, async (req, res) => {
   }
 });
 
-// Genre page
 app.get('/genre/:genre', requireAuth, async (req, res) => {
   const genre = req.params.genre;
   res.render('genre', { genre, batch: INFINITE_BATCH });
 });
 
-// Genre API (for infinite scroll)
 app.get('/api/genre/:genre', requireAuth, async (req, res) => {
   try {
     const genre = req.params.genre;
@@ -243,7 +215,6 @@ app.get('/api/genre/:genre', requireAuth, async (req, res) => {
   }
 });
 
-// Content details
 app.get('/content/:id', requireAuth, async (req, res) => {
   try {
     const content = await Content.findById(req.params.id);
@@ -255,7 +226,6 @@ app.get('/content/:id', requireAuth, async (req, res) => {
   }
 });
 
-// Player
 app.get('/player/:id', requireAuth, async (req, res) => {
   try {
     const content = await Content.findById(req.params.id);
@@ -267,11 +237,6 @@ app.get('/player/:id', requireAuth, async (req, res) => {
   }
 });
 
-// ==========================================
-// API ROUTES
-// ==========================================
-
-// Like/Unlike content
 app.post('/api/content/:id/like', requireAuth, async (req, res) => {
   try {
     const id = req.params.id;
@@ -294,27 +259,20 @@ app.post('/api/content/:id/like', requireAuth, async (req, res) => {
   }
 });
 
-// Stats - Daily views
 app.get('/api/stats/:userId/daily', requireAuth, async (req, res) => {
-  // Mock data - in production, aggregate from WatchHistory
   res.json({ 
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
     values: [2, 3, 1, 4, 5, 2, 0] 
   });
 });
 
-// Stats - Genre popularity
 app.get('/api/stats/genres/:userId', requireAuth, async (req, res) => {
-  // Mock data - in production, aggregate from WatchHistory
   res.json({ 
     labels: ['Drama', 'Comedy', 'Action'], 
     values: [10, 5, 8] 
   });
 });
 
-// ==========================================
-// ADMIN ROUTES
-// ==========================================
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -331,12 +289,10 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-// Admin add content page
 app.get('/admin/add', requireAdmin, (req, res) => {
   res.render('admin_add', { error: null });
 });
 
-// Admin add content POST
 app.post('/admin/add', requireAdmin, upload.fields([
   { name: 'video' },
   { name: 'image' }
@@ -363,11 +319,6 @@ app.post('/admin/add', requireAdmin, upload.fields([
   }
 });
 
-// ==========================================
-// PROFILES & SETTINGS
-// ==========================================
-
-// Settings page
 app.get('/settings', requireAuth, async (req, res) => {
   try {
     const user = await User.findById(req.session.userId).populate('profiles');
@@ -378,7 +329,6 @@ app.get('/settings', requireAuth, async (req, res) => {
   }
 });
 
-// Create profile
 app.post('/profiles', requireAuth, async (req, res) => {
   try {
     const { name } = req.body;
@@ -391,8 +341,6 @@ app.post('/profiles', requireAuth, async (req, res) => {
     res.redirect('/settings');
   }
 });
-
-// Delete profile
 app.delete('/profiles/:id', requireAuth, async (req, res) => {
   try {
     await Profile.findByIdAndDelete(req.params.id);
@@ -404,13 +352,8 @@ app.delete('/profiles/:id', requireAuth, async (req, res) => {
   }
 });
 
-// ==========================================
-// START SERVER
-// ==========================================
 app.listen(PORT, () => {
-  console.log('=================================');
-  console.log(`🎬 Netflix Clone Server Running`);
-  console.log(`📡 Port: ${PORT}`);
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log('=================================');
+  console.log(`Netflix Clone Server Running`);
+  console.log(`Port: ${PORT}`);
+  console.log(`http://localhost:${PORT}`);
 });
