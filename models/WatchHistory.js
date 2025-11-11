@@ -4,9 +4,9 @@ const Schema = mongoose.Schema;
 
 const WatchHistorySchema = new Schema({
   user: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
+  type: Schema.Types.ObjectId, 
+  ref: 'Profile', 
+  required: true 
   },
   content: { 
     type: Schema.Types.ObjectId, 
@@ -35,7 +35,7 @@ const WatchHistorySchema = new Schema({
   timestamps: true
 });
 
-// Create compound index for user + content
+// Create compound index for profile + content
 WatchHistorySchema.index({ user: 1, content: 1 }, { unique: true });
 
 // Create index for lastWatched for sorting
