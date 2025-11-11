@@ -169,9 +169,9 @@ if (typeof contents !== 'undefined' && contents.length > 0) {
   background-size: cover;
   background-position: center;
   display: flex;
-  align-items: flex-end;
-  padding: 3rem 4%;
-  margin: -80px -4% 2rem -4%;
+  align-items: center;
+  padding: 4rem 10% 4rem 6%; /* more right padding so title isn't flush to edge */
+  margin: -80px -10% 2rem -6%;
   border-radius: 0;
 }
 
@@ -188,7 +188,8 @@ if (typeof contents !== 'undefined' && contents.length > 0) {
 .content-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 600px;
+  max-width: 720px;
+  transform: translateX(-12%); /* nudge left so title has better spacing */
 }
 
 .content-hero h1 {
