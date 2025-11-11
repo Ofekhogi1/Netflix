@@ -63,6 +63,9 @@ app.use(session({
 
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
+  // expose admin flag separately so templates can check it even when
+  // res.locals.user doesn't include isAdmin
+  res.locals.isAdmin = req.session.isAdmin || false;
   next();
 });
 
