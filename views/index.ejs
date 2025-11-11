@@ -28,6 +28,7 @@
           <a href="/player/<%= item._id %>">
             <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
           </a>
+        
           <div class="content-card-body">
             <h5 class="content-card-title"><%= item.title %></h5>
             <div class="progress" style="height: 5px; margin-bottom: 0.5rem;">
@@ -169,9 +170,9 @@ if (typeof contents !== 'undefined' && contents.length > 0) {
   background-size: cover;
   background-position: center;
   display: flex;
-  align-items: flex-end;
-  padding: 3rem 4%;
-  margin: -80px -4% 2rem -4%;
+  align-items: center; /* center vertically for better balance */
+  padding: 4rem 6% 4rem 6%; /* more padding on both sides */
+  margin: -80px -6% 2rem -6%;
   border-radius: 0;
 }
 
@@ -188,7 +189,8 @@ if (typeof contents !== 'undefined' && contents.length > 0) {
 .content-hero-content {
   position: relative;
   z-index: 2;
-  max-width: 600px;
+  max-width: 720px; /* wider so title wraps less */
+  transform: translateX(-5%); /* nudge left so text sits over the image center-right */
 }
 
 .content-hero h1 {
