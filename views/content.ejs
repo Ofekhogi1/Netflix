@@ -1,6 +1,7 @@
 <!-- CONTENT DETAIL PAGE -->
 
 <!-- Hero Section -->
+<% if (typeof liked === 'undefined') { liked = false; } %>
 <div class="content-detail-hero" style="background-image: linear-gradient(rgba(0,0,0,0.5), rgba(20,20,20,1)), url('<%= content.imageUrl || "/img/placeholder.png" %>');">
   <div class="content-detail-info">
     <h1 class="display-4 fw-bold"><%= content.title %></h1>
@@ -28,7 +29,12 @@
         <i class="bi bi-play-fill"></i> נגן
       </a>
       <button class="btn btn-info btn-lg" onclick="toggleLike('<%= content._id %>')">
-        <i class="bi bi-heart" id="like-icon-<%= content._id %>"></i> אהבתי
+        <% if (liked) { %>
+          <i class="bi bi-heart-fill" id="like-icon-<%= content._id %>" style="color: var(--netflix-red)"></i>
+        <% } else { %>
+          <i class="bi bi-heart" id="like-icon-<%= content._id %>" style="color: white"></i>
+        <% } %>
+        אהבתי
       </button>
     </div>
 
@@ -157,9 +163,18 @@ function toggleLike(contentId) {
   .then(data => {
     if (data.ok) {
       const icon = document.getElementById(`like-icon-${contentId}`);
-      icon.classList.toggle('bi-heart');
-      icon.classList.toggle('bi-heart-fill');
-      icon.style.color = icon.classList.contains('bi-heart-fill') ? 'var(--netflix-red)' : 'white';
+      // server returns likes array for profile or user
+      const likes = data.likes || [];
+      const liked = likes.map(l => String(l)).includes(String(contentId));
+      if (liked) {
+        icon.classList.remove('bi-heart');
+        icon.classList.add('bi-heart-fill');
+        icon.style.color = 'var(--netflix-red)';
+      } else {
+        icon.classList.remove('bi-heart-fill');
+        icon.classList.add('bi-heart');
+        icon.style.color = 'white';
+      }
     }
   })
   .catch(err => console.error('Like error:', err));

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>בחר פרופיל</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="p-5 bg-dark text-light">
+  <div class="container text-center">
+    <h2 class="mb-4">שלום, <%= user.username %> — בחר פרופיל לצפייה</h2>
+
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <% if (profiles && profiles.length > 0) { %>
+        <% profiles.forEach(p => { %>
+          <form action="/profiles/select" method="POST">
+            <input type="hidden" name="profileId" value="<%= p._id %>" />
+            <button class="btn btn-light btn-lg m-2" type="submit"><%= p.name %></button>
+          </form>
+        <% }) %>
+      <% } else { %>
+        <p class="text-muted">אין לך עדיין פרופילים. צור אחד בהגדרות.</p>
+      <% } %>
+    </div>
+
+    <div class="mt-4">
+      <a href="/settings" class="btn btn-outline-light">ניהול פרופילים</a>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -66,6 +66,8 @@ app.use((req, res, next) => {
   // expose admin flag separately so templates can check it even when
   // res.locals.user doesn't include isAdmin
   res.locals.isAdmin = req.session.isAdmin || false;
+  // expose active profile
+  res.locals.activeProfile = req.session.activeProfile || null;
   next();
 });
 
@@ -109,6 +111,16 @@ app.post('/login', async (req, res) => {
       email: user.email 
     };
     req.session.isAdmin = user.isAdmin;
+
+    // if the user has a single profile, set it as active in session
+    try {
+      const populated = await User.findById(user._id).populate('profiles');
+      if (populated && populated.profiles && populated.profiles.length === 1) {
+        req.session.activeProfile = populated.profiles[0];
+      }
+    } catch (err) {
+      console.error('Error populating profiles on login:', err);
+    }
 
     res.redirect('/');
     
@@ -160,6 +172,16 @@ app.post('/register', async (req, res) => {
 
     await user.setPassword(password);
     await user.save();
+
+    // create a default profile for the new user
+    try {
+      const defaultProfile = new Profile({ name: 'ראשי', user: user._id });
+      await defaultProfile.save();
+      user.profiles = [defaultProfile._id];
+      await user.save();
+    } catch (err) {
+      console.error('Error creating default profile:', err);
+    }
 
     console.log('New user registered:', user.email);
     res.redirect('/login');
@@ -222,7 +244,23 @@ app.get('/content/:id', requireAuth, async (req, res) => {
   try {
     const content = await Content.findById(req.params.id);
     if (!content) return res.status(404).send('Content not found');
-    res.render('content', { content });
+
+    // determine if this content is liked by the active profile (or user as fallback)
+    let liked = false;
+    try {
+      if (req.session.activeProfile) {
+        const profileId = req.session.activeProfile._id ? req.session.activeProfile._id : req.session.activeProfile;
+        const profile = await Profile.findById(profileId);
+        if (profile && profile.likes && profile.likes.find(l => String(l) === String(content._id))) liked = true;
+      } else {
+        const user = await User.findById(req.session.userId);
+        if (user && user.likes && user.likes.find(l => String(l) === String(content._id))) liked = true;
+      }
+    } catch (err) {
+      console.error('Error checking liked status:', err);
+    }
+
+    res.render('content', { content, liked });
   } catch (error) {
     console.error('Content error:', error);
     res.status(404).send('Content not found');
@@ -233,7 +271,8 @@ app.get('/player/:id', requireAuth, async (req, res) => {
   try {
     const content = await Content.findById(req.params.id);
     if (!content) return res.status(404).send('Content not found');
-    res.render('player', { content });
+
+  res.render('player', { content });
   } catch (error) {
     console.error('Player error:', error);
     res.status(404).send('Content not found');
@@ -243,21 +282,82 @@ app.get('/player/:id', requireAuth, async (req, res) => {
 app.post('/api/content/:id/like', requireAuth, async (req, res) => {
   try {
     const id = req.params.id;
+    // Prefer per-profile likes when an active profile exists
+    if (req.session.activeProfile) {
+      const profileId = req.session.activeProfile._id ? req.session.activeProfile._id : req.session.activeProfile;
+      const profile = await Profile.findById(profileId);
+      if (!profile) return res.status(404).json({ ok: false });
+      const idx = profile.likes.findIndex(l => String(l) === String(id));
+      if (idx >= 0) {
+        profile.likes.splice(idx, 1);
+      } else {
+        profile.likes.push(id);
+      }
+      await profile.save();
+      return res.json({ ok: true, likes: profile.likes });
+    }
+
+    // Fallback to user-level likes for older sessions
     const user = await User.findById(req.session.userId);
-    
     if (!user) return res.status(404).json({ ok: false });
-    
     const idx = user.likes.indexOf(id);
     if (idx >= 0) {
       user.likes.splice(idx, 1);
     } else {
       user.likes.push(id);
     }
-    
     await user.save();
     res.json({ ok: true, likes: user.likes });
   } catch (error) {
     console.error('Like error:', error);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// Save watch progress for a content item (per-profile)
+app.post('/api/watch/:contentId', requireAuth, async (req, res) => {
+  try {
+    const { contentId } = req.params;
+    const { progress, timestamp } = req.body;
+  const profile = req.session.activeProfile ? (req.session.activeProfile._id ? req.session.activeProfile._id : req.session.activeProfile) : null;
+    if (!profile) return res.status(400).json({ ok: false, message: 'No active profile' });
+
+    const data = {
+      user: profile,
+      content: contentId,
+      progress: Math.min(100, Math.max(0, Number(progress) || 0)),
+      timestamp: Number(timestamp) || 0,
+      lastWatched: new Date()
+    };
+
+    const existing = await Watch.findOne({ user: profile, content: contentId });
+    if (existing) {
+      existing.progress = data.progress;
+      existing.timestamp = data.timestamp;
+      existing.lastWatched = data.lastWatched;
+      await existing.save();
+      return res.json({ ok: true, watch: existing });
+    }
+
+    const wh = new Watch(data);
+    await wh.save();
+    res.json({ ok: true, watch: wh });
+  } catch (err) {
+    console.error('Save watch error:', err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// Retrieve watch progress for current profile and content
+app.get('/api/watch/:contentId', requireAuth, async (req, res) => {
+  try {
+    const { contentId } = req.params;
+  const profile = req.session.activeProfile ? (req.session.activeProfile._id ? req.session.activeProfile._id : req.session.activeProfile) : null;
+  if (!profile) return res.json({ ok: true, watch: null });
+  const existing = await Watch.findOne({ user: profile, content: contentId });
+    res.json({ ok: true, watch: existing });
+  } catch (err) {
+    console.error('Get watch error:', err);
     res.status(500).json({ ok: false });
   }
 });
@@ -352,6 +452,31 @@ app.delete('/profiles/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Delete profile error:', error);
     res.status(500).json({ ok: false });
+  }
+});
+
+// profile select view
+app.get('/profiles/select', requireAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId).populate('profiles');
+    res.render('profile_select', { user, profiles: user.profiles });
+  } catch (err) {
+    console.error('Profile select error:', err);
+    res.redirect('/');
+  }
+});
+
+// set active profile
+app.post('/profiles/select', requireAuth, async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    const prof = await Profile.findById(profileId);
+    if (!prof) return res.redirect('/profiles/select');
+    req.session.activeProfile = prof;
+    res.redirect('/');
+  } catch (err) {
+    console.error('Set active profile error:', err);
+    res.redirect('/profiles/select');
   }
 });
 

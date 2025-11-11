@@ -115,6 +115,16 @@
   </div>
 </div>
 
+<!-- Similar Content (shown after play) -->
+<!-- Similar Content (shown after play) -->
+<section class="similar-content mt-5" id="similarAfterPlay" style="display:none;">
+  <h2 class="section-title">תכנים דומים שאתה עשוי לאהוב</h2>
+  <div class="content-row" id="similarRow"></div>
+</section>
+
+<!-- helper: embed first genre for client JS -->
+<div id="playerMeta" data-first-genre="<%= (content.genres && content.genres.length) ? content.genres[0] : '' %>" style="display:none;"></div>
+
 <style>
 .player-page {
   background-color: black;
@@ -623,6 +633,28 @@ if (video) {
   const contentId = '<%= content._id %>';
   let lastSavedTime = 0;
 
+  // Try to load saved progress for this profile
+  (async function loadSavedProgress() {
+    try {
+      const res = await fetch(`/api/watch/${contentId}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json && json.watch && typeof json.watch.timestamp !== 'undefined') {
+        const savedTime = Number(json.watch.timestamp) || 0;
+        // If metadata already loaded, set directly; otherwise wait for loadedmetadata
+        if (!isNaN(video.duration) && video.duration > 0) {
+          video.currentTime = Math.min(savedTime, video.duration - 1);
+        } else {
+          video.addEventListener('loadedmetadata', () => {
+            video.currentTime = Math.min(savedTime, video.duration - 1);
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error loading saved progress:', err);
+    }
+  })();
+
   video.addEventListener('timeupdate', () => {
     // Save progress every 10 seconds
     if (Math.floor(video.currentTime) % 10 === 0 && 
@@ -654,4 +686,47 @@ if (video) {
   // Save on page unload
   window.addEventListener('beforeunload', saveWatchProgress);
 }
+
+// Fetch and render similar content on first play
+// Fetch and render similar content on first play
+(function setupSimilarOnPlay() {
+  const playedFlagKey = 'similar_shown_' + '<%= content._id %>';
+  let shown = false;
+  const similarSection = document.getElementById('similarAfterPlay');
+  const similarRow = document.getElementById('similarRow');
+  // read first genre from helper meta element
+  const metaEl = document.getElementById('playerMeta');
+  const firstGenre = metaEl ? metaEl.dataset.firstGenre : '';
+
+  if (!firstGenre) return;
+
+  if (typeof video === 'undefined' || !video) return;
+
+  video.addEventListener('play', async () => {
+    if (shown) return;
+    shown = true;
+    try {
+      const res = await fetch(`/api/genre/${encodeURIComponent(firstGenre)}?skip=0&limit=6`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const items = json.items || [];
+      if (items.length === 0) return;
+      similarRow.innerHTML = items.map(it => `
+        <div class="content-card">
+          <a href="/content/${it._id}"><img src="${it.imageUrl || '/img/placeholder.png'}" alt="${it.title || ''}"></a>
+          <div class="content-card-body">
+            <h5 class="content-card-title">${it.title || 'תוכן'}</h5>
+            <div class="d-flex gap-2">
+              <a href="/player/${it._id}" class="btn btn-play btn-sm"><i class="bi bi-play-fill"></i></a>
+              <a href="/content/${it._id}" class="btn btn-info btn-sm"><i class="bi bi-info-circle"></i></a>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      similarSection.style.display = 'block';
+    } catch (err) {
+      console.error('Error loading similar content:', err);
+    }
+  }, { once: true });
+})();
 </script>

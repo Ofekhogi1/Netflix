@@ -29,7 +29,7 @@
       
       <!-- Navbar Content -->
       <div class="collapse navbar-collapse" id="navbarContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+  <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <% if (typeof user !== 'undefined' && user) { %>
             <li class="nav-item">
               <a class="nav-link" href="/">דף הבית</a>
@@ -39,6 +39,16 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" href="/settings">הגדרות</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/profiles/select">
+                <i class="bi bi-people"></i>
+                <% if (activeProfile) { %>
+                  <span class="text-warning"> <%= activeProfile.name %> </span>
+                <% } else { %>
+                  בחר פרופיל
+                <% } %>
+              </a>
             </li>
             <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
               <li class="nav-item">
