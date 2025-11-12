@@ -1,0 +1,382 @@
+<div class="liked-page">
+  <!-- Header -->
+  <div class="liked-header">
+    <h1>
+      <i class="bi bi-heart-fill" style="color: var(--netflix-red);"></i>
+      התכנים שאהבתי
+    </h1>
+    <p class="lead text-muted">כל התכנים שסימנת כאהובים</p>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-bar">
+    <div class="row align-items-center">
+      <div class="col-md-6">
+        <div class="count-display">
+          <i class="bi bi-collection-fill"></i>
+          <span id="contentCount"><%= likedContent.length %></span> תכנים
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="d-flex gap-3 justify-content-end">
+          <div class="control-group">
+            <label for="typeFilter" class="form-label">סוג</label>
+            <select id="typeFilter" class="form-select">
+              <option value="all">הכל</option>
+              <option value="movie">סרטים</option>
+              <option value="series">סדרות</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <label for="sortSelect" class="form-label">מיון</label>
+            <select id="sortSelect" class="form-select">
+              <option value="recent">נוספו לאחרונה</option>
+              <option value="title">שם (א-ת)</option>
+              <option value="year">שנה</option>
+              <option value="rating">דירוג</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div id="contentGrid" class="content-grid">
+    <% if (likedContent && likedContent.length > 0) { %>
+      <% likedContent.forEach(item => { %>
+        <div class="content-card" 
+             data-content-id="<%= item._id %>"
+             data-type="<%= item.type || 'movie' %>"
+             data-title="<%= item.title %>"
+             data-year="<%= item.releaseYear || 0 %>"
+             data-rating="<%= item.rating || 0 %>">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+            <div class="content-overlay">
+              <div class="overlay-content">
+                <h5><%= item.title %></h5>
+                <% if (item.rating) { %>
+                  <div class="rating">
+                    <i class="bi bi-star-fill"></i> <%= item.rating %>
+                  </div>
+                <% } %>
+                <% if (item.type === 'series') { %>
+                  <div class="type-badge">
+                    <i class="bi bi-collection-play"></i> סדרה
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <% if (item.releaseYear) { %>
+              <small class="text-muted"><i class="bi bi-calendar3"></i> <%= item.releaseYear %></small>
+            <% } %>
+            <div class="d-flex gap-2 mt-2">
+              <% 
+                const playUrl = item.type === 'series' && item.episodes && item.episodes.length > 0 
+                  ? `/player/${item._id}?episode=1` 
+                  : `/player/${item._id}`;
+              %>
+              <a href="<%= playUrl %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i>
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+              <button class="btn btn-danger btn-sm" onclick="unlikeContent('<%= item._id %>')">
+                <i class="bi bi-heart-fill"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } else { %>
+      <div class="empty-state">
+        <i class="bi bi-heart"></i>
+        <h3>אין לך תכנים אהובים עדיין</h3>
+        <p>התחל לסמן תכנים שאתה אוהב וראה אותם כאן</p>
+        <a href="/" class="btn btn-netflix">עבור לדף הבית</a>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<style>
+.liked-page {
+  padding: 2rem 4%;
+  min-height: 100vh;
+}
+
+.liked-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--netflix-gray);
+}
+
+.liked-header h1 {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.liked-header .lead {
+  margin: 0;
+}
+
+.controls-bar {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.count-display {
+  color: white;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.count-display i {
+  color: var(--netflix-red);
+  font-size: 1.5rem;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 150px;
+}
+
+.control-group label {
+  color: white;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.control-group .form-select {
+  background-color: var(--netflix-dark);
+  color: white;
+  border: 1px solid var(--netflix-gray);
+  padding: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.control-group .form-select:focus {
+  background-color: var(--netflix-dark);
+  color: white;
+  border-color: var(--netflix-red);
+  box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.content-card {
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.content-card:hover {
+  transform: scale(1.05);
+  z-index: 10;
+}
+
+.content-card img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.content-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+}
+
+.content-card:hover .content-overlay {
+  opacity: 1;
+}
+
+.overlay-content h5 {
+  color: white;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.overlay-content .rating {
+  color: #ffd700;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.overlay-content .type-badge {
+  color: var(--netflix-red);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem 2rem;
+  color: white;
+}
+
+.empty-state i {
+  font-size: 5rem;
+  color: var(--netflix-gray);
+  margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state p {
+  color: var(--netflix-light-gray);
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 768px) {
+  .liked-header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .controls-bar .row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .controls-bar .d-flex {
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+  }
+  
+  .content-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+}
+</style>
+
+<script>
+const typeFilter = document.getElementById('typeFilter');
+const sortSelect = document.getElementById('sortSelect');
+const contentGrid = document.getElementById('contentGrid');
+
+// Filter by type
+typeFilter.addEventListener('change', () => {
+  applyFiltersAndSort();
+});
+
+// Sort content
+sortSelect.addEventListener('change', () => {
+  applyFiltersAndSort();
+});
+
+function applyFiltersAndSort() {
+  const cards = Array.from(document.querySelectorAll('.content-card'));
+  const selectedType = typeFilter.value;
+  const selectedSort = sortSelect.value;
+  
+  // Filter
+  cards.forEach(card => {
+    const cardType = card.dataset.type;
+    if (selectedType === 'all' || cardType === selectedType) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+  
+  // Sort visible cards
+  const visibleCards = cards.filter(card => card.style.display !== 'none');
+  
+  visibleCards.sort((a, b) => {
+    switch (selectedSort) {
+      case 'title':
+        return a.dataset.title.localeCompare(b.dataset.title, 'he');
+      case 'year':
+        return parseInt(b.dataset.year) - parseInt(a.dataset.year);
+      case 'rating':
+        return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+      case 'recent':
+      default:
+        return 0; // Keep original order (most recent first)
+    }
+  });
+  
+  // Re-append in sorted order
+  visibleCards.forEach(card => {
+    contentGrid.appendChild(card);
+  });
+  
+  // Update count
+  const countDisplay = document.getElementById('contentCount');
+  if (countDisplay) {
+    countDisplay.textContent = visibleCards.length;
+  }
+}
+
+async function unlikeContent(contentId) {
+  try {
+    const res = await fetch(`/api/content/${contentId}/like`, {
+      method: 'POST'
+    });
+    
+    if (res.ok) {
+      // Remove card from display
+      const card = document.querySelector(`[data-content-id="${contentId}"]`);
+      if (card) {
+        card.style.transition = 'opacity 0.3s ease';
+        card.style.opacity = '0';
+        setTimeout(() => {
+          card.remove();
+          applyFiltersAndSort();
+          
+          // Check if empty
+          const remainingCards = document.querySelectorAll('.content-card');
+          if (remainingCards.length === 0) {
+            contentGrid.innerHTML = `
+              <div class="empty-state">
+                <i class="bi bi-heart"></i>
+                <h3>אין לך תכנים אהובים עדיין</h3>
+                <p>התחל לסמן תכנים שאתה אוהב וראה אותם כאן</p>
+                <a href="/" class="btn btn-netflix">עבור לדף הבית</a>
+              </div>
+            `;
+          }
+        }, 300);
+      }
+    }
+  } catch (err) {
+    console.error('Error unliking content:', err);
+    alert('שגיאה בהסרת התוכן מהאהובים');
+  }
+}
+</script>

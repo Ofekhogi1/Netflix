@@ -1,0 +1,217 @@
+<div class="container mt-5" dir="rtl">
+  <div class="row">
+    <div class="col-12">
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="text-light">
+            <i class="bi bi-film"></i> ניהול פרקים: <%= content.title %>
+          </h2>
+          <p class="text-muted">
+            <span class="badge bg-secondary"><%= content.seasons %> עונות</span>
+            <span class="badge bg-info ms-2"><%= content.episodes ? content.episodes.length : 0 %> פרקים קיימים</span>
+          </p>
+        </div>
+        <a href="/content/<%= content._id %>" class="btn btn-outline-light">
+          <i class="bi bi-arrow-right"></i> חזור לתוכן
+        </a>
+      </div>
+
+      <!-- Add Episode Form -->
+      <div class="card bg-dark text-light shadow-lg mb-4 rounded-4 border-warning border-2">
+        <div class="card-body p-4">
+          <h4 class="text-warning mb-4">
+            <i class="bi bi-plus-circle"></i> הוספת פרק חדש
+          </h4>
+
+          <% if (error) { %>
+            <div class="alert alert-danger"><%= error %></div>
+          <% } %>
+          <% if (success) { %>
+            <div class="alert alert-success"><%= success %></div>
+          <% } %>
+
+          <form method="post" action="/admin/series/<%= content._id %>/episodes/add" enctype="multipart/form-data">
+            <div class="row">
+              <div class="col-md-3">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">עונה</label>
+                  <select name="season" class="form-select bg-dark text-light border-secondary" required>
+                    <% for(let i = 1; i <= content.seasons; i++) { %>
+                      <option value="<%= i %>">עונה <%= i %></option>
+                    <% } %>
+                  </select>
+                </div>
+              </div>
+
+              <div class="col-md-3">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">מספר פרק</label>
+                  <input type="number" name="episodeNumber" class="form-control bg-dark text-light border-secondary" 
+                         value="<%= (content.episodes ? content.episodes.length : 0) + 1 %>" required min="1">
+                  <small class="text-muted">הפרק הבא: <%= (content.episodes ? content.episodes.length : 0) + 1 %></small>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">כותרת הפרק</label>
+                  <input type="text" name="title" class="form-control bg-dark text-light border-secondary" 
+                         placeholder="למשל: הפיילוט" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-3">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">משך (דקות)</label>
+                  <input type="number" name="duration" class="form-control bg-dark text-light border-secondary" 
+                         placeholder="45" value="45">
+                </div>
+              </div>
+
+              <div class="col-md-9">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">תאריך שידור (אופציונלי)</label>
+                  <input type="date" name="airDate" class="form-control bg-dark text-light border-secondary">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label fw-semibold">תיאור הפרק</label>
+              <textarea name="description" class="form-control bg-dark text-light border-secondary" 
+                        rows="3" placeholder="תיאור קצר של הפרק..."></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">קובץ וידאו <span class="text-danger">*</span></label>
+                  <input type="file" name="video" class="form-control bg-dark text-light border-secondary" accept="video/*">
+                  <small class="text-muted">אם לא תעלה, ישתמש בקובץ ברירת מחדל</small>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">תמונה (אופציונלי)</label>
+                  <input type="file" name="image" class="form-control bg-dark text-light border-secondary" accept="image/*">
+                  <small class="text-muted">אם לא תעלה, תשתמש בתמונת הסדרה</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-warning px-5 py-2 fw-bold">
+                <i class="bi bi-plus-circle"></i> הוסף פרק
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Episodes List -->
+      <div class="card bg-dark text-light shadow-lg rounded-4 border-0">
+        <div class="card-body p-4">
+          <h4 class="text-light mb-4">
+            <i class="bi bi-list-ol"></i> פרקים קיימים
+          </h4>
+
+          <% if (!content.episodes || content.episodes.length === 0) { %>
+            <div class="alert alert-info text-center">
+              <i class="bi bi-info-circle"></i> עדיין אין פרקים בסדרה זו. הוסף את הפרק הראשון למעלה!
+            </div>
+          <% } else { %>
+            <!-- Group by seasons -->
+            <% 
+              const episodesBySeason = {};
+              content.episodes.forEach(ep => {
+                const season = ep.season || 1;
+                if (!episodesBySeason[season]) episodesBySeason[season] = [];
+                episodesBySeason[season].push(ep);
+              });
+            %>
+
+            <% Object.keys(episodesBySeason).sort((a, b) => a - b).forEach(season => { %>
+              <div class="season-group mb-4">
+                <h5 class="text-warning mb-3">
+                  <i class="bi bi-collection-play"></i> עונה <%= season %>
+                  <span class="badge bg-secondary"><%= episodesBySeason[season].length %> פרקים</span>
+                </h5>
+
+                <div class="table-responsive">
+                  <table class="table table-dark table-hover">
+                    <thead>
+                      <tr>
+                        <th width="80">פרק</th>
+                        <th>כותרת</th>
+                        <th width="100">משך</th>
+                        <th width="120">וידאו</th>
+                        <th width="150">פעולות</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% episodesBySeason[season].sort((a, b) => a.episodeNumber - b.episodeNumber).forEach(episode => { %>
+                        <tr>
+                          <td class="fw-bold"><%= episode.episodeNumber %></td>
+                          <td>
+                            <%= episode.title %>
+                            <% if (episode.description) { %>
+                              <br><small class="text-muted"><%= episode.description.substring(0, 60) %>...</small>
+                            <% } %>
+                          </td>
+                          <td><%= episode.duration || 'N/A' %></td>
+                          <td>
+                            <% if (episode.videoUrl) { %>
+                              <i class="bi bi-check-circle text-success"></i> קיים
+                            <% } else { %>
+                              <i class="bi bi-x-circle text-danger"></i> חסר
+                            <% } %>
+                          </td>
+                          <td>
+                            <a href="/player/<%= content._id %>?episode=<%= episode.episodeNumber %>" 
+                               class="btn btn-sm btn-outline-light" target="_blank" title="נגן">
+                              <i class="bi bi-play-fill"></i>
+                            </a>
+                            <form method="post" action="/admin/series/<%= content._id %>/episodes/<%= episode._id %>/delete" 
+                                  style="display: inline;" onsubmit="return confirm('בטוח שרוצה למחוק את הפרק?')">
+                              <button type="submit" class="btn btn-sm btn-outline-danger" title="מחק">
+                                <i class="bi bi-trash"></i>
+                              </button>
+                            </form>
+                          </td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            <% }) %>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.season-group {
+  border-left: 3px solid var(--netflix-red);
+  padding-left: 1rem;
+}
+
+.table-dark {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.table-dark th {
+  border-bottom: 2px solid var(--netflix-red);
+  color: var(--netflix-light-gray);
+}
+
+.table-dark td {
+  vertical-align: middle;
+}
+</style>
