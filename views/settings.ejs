@@ -30,9 +30,14 @@
               <%= profile.name.charAt(0).toUpperCase() %>
             </div>
             <p class="profile-name"><%= profile.name %></p>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteProfile('<%= profile._id %>')">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-flex gap-2 justify-content-center">
+              <button class="btn btn-sm btn-outline-warning" onclick="showEditProfileModal('<%= profile._id %>', '<%= profile.name %>')">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteProfile('<%= profile._id %>')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </div>
         <% }) %>
       <% } %>
@@ -135,6 +140,39 @@
         <div class="modal-footer border-0">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
           <button type="submit" class="btn btn-netflix">צור פרופיל</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-netflix-dark">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">ערוך פרופיל</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editProfileForm">
+        <input type="hidden" id="editProfileId" name="profileId">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="editProfileName" class="form-label">שם הפרופיל</label>
+            <input 
+              type="text" 
+              name="name" 
+              id="editProfileName" 
+              class="form-control" 
+              placeholder="למשל: ילדים, אבא, אמא..."
+              required
+              maxlength="20"
+            />
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+          <button type="submit" class="btn btn-netflix">שמור שינויים</button>
         </div>
       </form>
     </div>
@@ -283,6 +321,41 @@ function showAddProfileModal() {
   const modal = new bootstrap.Modal(document.getElementById('addProfileModal'));
   modal.show();
 }
+
+// Show Edit Profile Modal
+function showEditProfileModal(profileId, profileName) {
+  document.getElementById('editProfileId').value = profileId;
+  document.getElementById('editProfileName').value = profileName;
+  const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+  modal.show();
+}
+
+// Handle Edit Profile Form Submit
+document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const profileId = document.getElementById('editProfileId').value;
+  const newName = document.getElementById('editProfileName').value;
+  
+  try {
+    const response = await fetch(`/profiles/${profileId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newName })
+    });
+    
+    if (response.ok) {
+      location.reload();
+    } else {
+      alert('שגיאה בעדכון הפרופיל');
+    }
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    alert('שגיאה בעדכון הפרופיל');
+  }
+});
 
 // Delete Profile
 async function deleteProfile(profileId) {

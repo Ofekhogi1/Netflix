@@ -1,19 +1,40 @@
 <!-- VIDEO PLAYER PAGE -->
+<%
+// Use episodeNumber and season passed from server route
+const currentSeason = content.type === 'series' && typeof season !== 'undefined' && season !== null ? season : (content.type === 'series' ? 1 : null);
+const currentEpisodeNumber = content.type === 'series' && typeof episodeNumber !== 'undefined' && episodeNumber !== null ? episodeNumber : (content.type === 'series' ? 1 : null);
+const currentEpisodeData = currentSeason !== null && currentEpisodeNumber !== null && content.episodes ? 
+  content.episodes.find(ep => ep.season === currentSeason && ep.episodeNumber === currentEpisodeNumber) : null;
+const currentEpisodeIndex = currentEpisodeData && content.episodes ? content.episodes.indexOf(currentEpisodeData) : null;
+const videoSource = (currentEpisodeData && currentEpisodeData.videoUrl) || content.videoUrl;
+const nextEpisodeIndex = currentEpisodeIndex !== null && content.episodes && currentEpisodeIndex < content.episodes.length - 1 ? currentEpisodeIndex + 1 : null;
+const nextEpisode = nextEpisodeIndex !== null && content.episodes ? content.episodes[nextEpisodeIndex] : null;
+%>
 
 <div class="player-page">
   <!-- Back Button -->
-  <div class="player-header">
+  <div class="player-header" id="playerHeader">
     <a href="/content/<%= content._id %>" class="btn-back">
       <i class="bi bi-arrow-right"></i> חזור
     </a>
-    <h3><%= content.title %></h3>
+    <h3>
+      <%= content.title %>
+      <% if (currentEpisodeData) { %>
+        <span class="text-muted"> - עונה <%= currentEpisodeData.season %> פרק <%= currentEpisodeData.episodeNumber %>: <%= currentEpisodeData.title %></span>
+      <% } %>
+    </h3>
+    <% if (content.type === 'series') { %>
+      <button id="toggleEpisodesBtn" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-list"></i> פרקים
+      </button>
+    <% } %>
   </div>
 
   <!-- Video Player -->
   <div class="player-wrapper">
-    <% if (content.videoUrl) { %>
-      <video id="videoPlayer" class="video-player" controls>
-        <source src="<%= content.videoUrl %>" type="video/mp4">
+    <% if (videoSource) { %>
+      <video id="videoPlayer" class="video-player">
+        <source src="<%= videoSource %>" type="video/mp4">
         הדפדפן שלך לא תומך בוידאו
       </video>
 
@@ -37,6 +58,11 @@
             <button id="forwardBtn" title="קדימה 10 שניות">
               <i class="bi bi-skip-forward-fill"></i>
             </button>
+            <% if (nextEpisode) { %>
+              <button id="nextEpisodeBtn" title="פרק הבא" onclick="goToNextEpisode()">
+                <i class="bi bi-skip-end-fill"></i> פרק הבא
+              </button>
+            <% } %>
             <div class="volume-control">
               <button id="volumeBtn" title="שקט">
                 <i class="bi bi-volume-up-fill"></i>
@@ -49,6 +75,11 @@
           </div>
 
           <div class="controls-right">
+            <% if (content.type === 'series') { %>
+              <button id="episodesListBtn" title="רשימת פרקים" onclick="toggleEpisodesOverlay()">
+                <i class="bi bi-list-ul"></i>
+              </button>
+            <% } %>
             <button id="settingsBtn" title="הגדרות">
               <i class="bi bi-gear-fill"></i>
             </button>
@@ -58,6 +89,27 @@
           </div>
         </div>
       </div>
+
+      <!-- Next Episode Countdown -->
+      <% if (nextEpisode) { %>
+        <div id="nextEpisodeCountdown" class="next-episode-countdown" style="display: none;">
+          <div class="countdown-content">
+            <h3>פרק הבא</h3>
+            <p><%= nextEpisode.title %></p>
+            <div class="countdown-timer">
+              <span id="countdownNumber">10</span>
+            </div>
+            <div class="countdown-buttons">
+              <button class="btn btn-play" onclick="goToNextEpisode()">
+                <i class="bi bi-play-fill"></i> נגן עכשיו
+              </button>
+              <button class="btn btn-outline-light" onclick="cancelCountdown()">
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      <% } %>
     <% } else { %>
       <!-- No Video Message -->
       <div class="no-video-message">
@@ -68,21 +120,42 @@
     <% } %>
   </div>
 
-  <!-- Episode List (for series) -->
+  <!-- Episodes Overlay (for series) -->
   <% if (content.type === 'series' && content.episodes && content.episodes.length > 0) { %>
-    <div class="episodes-section">
-      <h4>פרקים</h4>
-      <div class="episodes-list">
+    <div id="episodesOverlay" class="episodes-overlay">
+      <div class="episodes-overlay-header">
+        <h3>פרקים</h3>
+        <button onclick="toggleEpisodesOverlay()" class="btn-close-overlay">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+      <div class="episodes-overlay-content">
         <% content.episodes.forEach((episode, index) => { %>
-          <div class="episode-item" onclick="location.href='/player/<%= content._id %>?episode=<%= index %>'">
-            <div class="episode-number"><%= index + 1 %></div>
-            <div class="episode-info">
-              <h5><%= episode.title || `פרק ${index + 1}` %></h5>
-              <p class="text-muted"><%= episode.duration || '45 דקות' %></p>
+          <div class="episode-overlay-item <%= currentEpisodeData && episode.season === currentEpisodeData.season && episode.episodeNumber === currentEpisodeData.episodeNumber ? 'active' : '' %>" 
+               onclick="playEpisode(<%= episode.season %>, <%= episode.episodeNumber %>)">
+            <div class="episode-overlay-thumbnail">
+              <img src="<%= episode.imageUrl || content.imageUrl || '/img/placeholder.png' %>" alt="<%= episode.title %>">
+              <div class="episode-overlay-play">
+                <i class="bi bi-play-fill"></i>
+              </div>
+              <div class="episode-overlay-progress" id="overlay-progress-s<%= episode.season %>e<%= episode.episodeNumber %>">
+                <div class="episode-overlay-progress-fill"></div>
+              </div>
             </div>
-            <button class="btn btn-sm btn-play">
-              <i class="bi bi-play-fill"></i>
-            </button>
+            <div class="episode-overlay-info">
+              <div class="episode-overlay-number">עונה <%= episode.season %> פרק <%= episode.episodeNumber %></div>
+              <div>
+                <h5><%= episode.title %></h5>
+                <% if (episode.description) { %>
+                  <p><%= episode.description %></p>
+                <% } %>
+                <div class="episode-overlay-meta">
+                  <% if (episode.duration) { %>
+                    <span><i class="bi bi-clock"></i> <%= episode.duration %></span>
+                  <% } %>
+                </div>
+              </div>
+            </div>
           </div>
         <% }) %>
       </div>
@@ -389,6 +462,274 @@
   color: white;
 }
 
+/* Episodes Overlay */
+.episodes-overlay {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 450px;
+  max-width: 90vw;
+  height: 100vh;
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(10px);
+  z-index: 2000;
+  transition: right 0.3s ease;
+  overflow-y: auto;
+  box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+}
+
+.episodes-overlay.open {
+  right: 0;
+}
+
+.episodes-overlay-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: sticky;
+  top: 0;
+  background: rgba(20, 20, 20, 0.98);
+  z-index: 1;
+}
+
+.episodes-overlay-header h3 {
+  color: white;
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.btn-close-overlay {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.btn-close-overlay:hover {
+  color: var(--netflix-red);
+}
+
+.episodes-overlay-content {
+  padding: 1rem;
+}
+
+.episode-overlay-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: var(--transition);
+  margin-bottom: 1rem;
+  background: rgba(255,255,255,0.05);
+}
+
+.episode-overlay-item:hover {
+  background: rgba(255,255,255,0.1);
+  transform: translateX(-5px);
+}
+
+.episode-overlay-item.active {
+  background: var(--netflix-red);
+}
+
+.episode-overlay-thumbnail {
+  position: relative;
+  width: 140px;
+  height: 80px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.episode-overlay-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.episode-overlay-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: var(--transition);
+}
+
+.episode-overlay-item:hover .episode-overlay-play {
+  opacity: 1;
+}
+
+.episode-overlay-play i {
+  color: white;
+  font-size: 1.2rem;
+}
+
+.episode-overlay-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255,255,255,0.2);
+}
+
+.episode-overlay-progress-fill {
+  height: 100%;
+  background: var(--netflix-red);
+  transition: width 0.3s ease;
+}
+
+.episode-overlay-progress-fill.completed {
+  background: #46d369;
+}
+
+.episode-overlay-info {
+  flex: 1;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.episode-overlay-number {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--netflix-light-gray);
+  min-width: 30px;
+}
+
+.episode-overlay-item.active .episode-overlay-number {
+  color: white;
+}
+
+.episode-overlay-info h5 {
+  color: white;
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+}
+
+.episode-overlay-info p {
+  color: var(--netflix-light-gray);
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.episode-overlay-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--netflix-light-gray);
+}
+
+.episode-overlay-meta i {
+  margin-left: 0.25rem;
+}
+
+/* Next Episode Countdown */
+.next-episode-countdown {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1500;
+}
+
+.countdown-content {
+  text-align: center;
+  color: white;
+}
+
+.countdown-content h3 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.countdown-content p {
+  font-size: 1.2rem;
+  color: var(--netflix-light-gray);
+  margin-bottom: 2rem;
+}
+
+.countdown-timer {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  color: var(--netflix-red);
+}
+
+.countdown-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.countdown-buttons .btn {
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+}
+
+.btn-play {
+  background: var(--netflix-red);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-play:hover {
+  background: #c11119;
+}
+
+#nextEpisodeBtn {
+  background: rgba(255,255,255,0.2);
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+#nextEpisodeBtn:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+#toggleEpisodesBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#episodesListBtn {
+  background: rgba(255,255,255,0.2);
+}
+
+#episodesListBtn:hover {
+  background: rgba(255,255,255,0.3);
+}
+
 .player-info-section h2 {
   color: white;
   margin-bottom: 1rem;
@@ -631,12 +972,21 @@ if (video) {
 
   // Track watch progress
   const contentId = '<%= content._id %>';
+  const contentType = '<%= content.type %>';
+  const urlParams = new URLSearchParams(window.location.search);
+  const currentSeason = contentType === 'series' ? (parseInt(urlParams.get('season')) || 1) : null;
+  const currentEpisodeNumber = contentType === 'series' ? (parseInt(urlParams.get('episode')) || 1) : null;
   let lastSavedTime = 0;
+  let countdownInterval = null;
 
   // Try to load saved progress for this profile
   (async function loadSavedProgress() {
     try {
-      const res = await fetch(`/api/watch/${contentId}`);
+      let url = `/api/watch/${contentId}`;
+      if (currentSeason !== null && currentEpisodeNumber !== null) {
+        url += `?season=${currentSeason}&episode=${currentEpisodeNumber}`;
+      }
+      const res = await fetch(url);
       if (!res.ok) return;
       const json = await res.json();
       if (json && json.watch && typeof json.watch.timestamp !== 'undefined') {
@@ -655,6 +1005,32 @@ if (video) {
     }
   })();
 
+  // Load episode progress for overlay
+  (async function loadEpisodeProgress() {
+    if (contentType !== 'series') return;
+    try {
+      const res = await fetch(`/api/watch/${contentId}/episodes`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (json && json.episodes) {
+        json.episodes.forEach(ep => {
+          const progressEl = document.getElementById(`overlay-progress-s${ep.season}e${ep.episodeNumber}`);
+          if (progressEl) {
+            const fill = progressEl.querySelector('.episode-overlay-progress-fill');
+            if (fill) {
+              fill.style.width = `${ep.progress}%`;
+              if (ep.progress >= 95) {
+                fill.classList.add('completed');
+              }
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error loading episode progress:', err);
+    }
+  })();
+
   video.addEventListener('timeupdate', () => {
     // Save progress every 10 seconds
     if (Math.floor(video.currentTime) % 10 === 0 && 
@@ -662,21 +1038,35 @@ if (video) {
       lastSavedTime = Math.floor(video.currentTime);
       saveWatchProgress();
     }
+
+    // Show next episode countdown when near end (last 30 seconds)
+    if (contentType === 'series' && document.getElementById('nextEpisodeCountdown')) {
+      const timeRemaining = video.duration - video.currentTime;
+      if (timeRemaining <= 30 && timeRemaining > 0 && !countdownInterval) {
+        showNextEpisodeCountdown();
+      }
+    }
   });
 
   async function saveWatchProgress() {
     const progress = (video.currentTime / video.duration) * 100;
     
     try {
+      const body = {
+        progress: progress,
+        timestamp: video.currentTime
+      };
+      if (currentEpisodeNumber !== null && currentSeason !== null) {
+        body.episodeNumber = currentEpisodeNumber;
+        body.season = currentSeason;
+      }
+      
       await fetch(`/api/watch/${contentId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          progress: progress,
-          timestamp: video.currentTime
-        })
+        body: JSON.stringify(body)
       });
     } catch (error) {
       console.error('Error saving watch progress:', error);
@@ -685,6 +1075,54 @@ if (video) {
 
   // Save on page unload
   window.addEventListener('beforeunload', saveWatchProgress);
+}
+
+// Episode management functions (global scope)
+function toggleEpisodesOverlay() {
+  const overlay = document.getElementById('episodesOverlay');
+  if (overlay) {
+    overlay.classList.toggle('open');
+  }
+}
+
+function playEpisode(season, episodeNumber) {
+  const contentId = '<%= content._id %>';
+  window.location.href = `/player/${contentId}?season=${season}&episode=${episodeNumber}`;
+}
+
+function goToNextEpisode() {
+  <% if (nextEpisode) { %>
+  const contentId = '<%= content._id %>';
+  window.location.href = `/player/${contentId}?season=<%= nextEpisode.season %>&episode=<%= nextEpisode.episodeNumber %>`;
+  <% } %>
+}
+
+function showNextEpisodeCountdown() {
+  const countdown = document.getElementById('nextEpisodeCountdown');
+  if (!countdown || countdownInterval) return;
+  
+  countdown.style.display = 'flex';
+  let seconds = 10;
+  const numberEl = document.getElementById('countdownNumber');
+  
+  countdownInterval = setInterval(() => {
+    seconds--;
+    if (numberEl) numberEl.textContent = seconds;
+    
+    if (seconds <= 0) {
+      clearInterval(countdownInterval);
+      goToNextEpisode();
+    }
+  }, 1000);
+}
+
+function cancelCountdown() {
+  const countdown = document.getElementById('nextEpisodeCountdown');
+  if (countdown) countdown.style.display = 'none';
+  if (countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
 }
 
 // Fetch and render similar content on first play

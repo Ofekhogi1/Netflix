@@ -37,6 +37,21 @@
             <li class="nav-item">
               <a class="nav-link" href="/search">חיפוש</a>
             </li>
+            
+            <!-- Genres Dropdown (Dynamic from DB) -->
+            <% if (typeof allGenres !== 'undefined' && allGenres && allGenres.length > 0) { %>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  ז'אנרים
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark">
+                  <% allGenres.forEach(genre => { %>
+                    <li><a class="dropdown-item" href="/genre/<%= genre %>"><%= genre %></a></li>
+                  <% }) %>
+                </ul>
+              </li>
+            <% } %>
+            
             <li class="nav-item">
               <a class="nav-link" href="/settings">הגדרות</a>
             </li>

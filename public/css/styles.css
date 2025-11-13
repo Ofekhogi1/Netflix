@@ -161,6 +161,27 @@ main.container {
   gap: 0.5rem;
 }
 
+.section-title .view-all-link {
+  margin-right: auto;
+  margin-left: 1rem;
+}
+
+.view-all-link {
+  font-size: 0.9rem;
+  color: var(--netflix-light-gray);
+  text-decoration: none;
+  transition: var(--transition);
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.view-all-link:hover {
+  color: white;
+}
+
 .content-row {
   display: flex;
   gap: 1rem;

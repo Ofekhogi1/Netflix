@@ -1,6 +1,6 @@
 <div class="container mt-5" dir="rtl">
   <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-md-10">
       <div class="card bg-dark text-light shadow-lg p-4 rounded-4 border-0">
         <h3 class="mb-4 text-center text-danger fw-bold">הוספת תוכן חדש</h3>
 
@@ -9,24 +9,55 @@
         <% } %>
 
         <form method="post" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">כותרת הסרט / הסדרה</label>
-            <input name="title" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: בית הנייר">
+          <!-- Content Type Selection -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">סוג התוכן</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="type" id="typeMovie" value="movie" checked onchange="toggleSeriesFields()">
+                <label class="form-check-label" for="typeMovie">
+                  <i class="bi bi-film"></i> סרט
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="type" id="typeSeries" value="series" onchange="toggleSeriesFields()">
+                <label class="form-check-label" for="typeSeries">
+                  <i class="bi bi-collection-play"></i> סדרה
+                </label>
+              </div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">שנת יציאה</label>
-            <input name="year" type="number" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: 2023">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">כותרת</label>
+                <input name="title" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: בית הנייר" required>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">שנת יציאה</label>
+                <input name="year" type="number" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: 2023">
+              </div>
+            </div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">ז׳אנרים (מופרדים בפסיקים)</label>
-            <input name="genres" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: אקשן, מתח, דרמה">
-          </div>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">ז׳אנרים (מופרדים בפסיקים)</label>
+                <input name="genres" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: אקשן, מתח, דרמה">
+              </div>
+            </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">במאי</label>
-            <input name="director" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: כריסטופר נולאן">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">במאי</label>
+                <input name="director" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="לדוגמה: כריסטופר נולאן">
+              </div>
+            </div>
           </div>
 
           <div class="mb-3">
@@ -39,9 +70,30 @@
             <textarea name="description" class="form-control bg-dark text-light border-secondary rounded-3" rows="4" placeholder="כתוב כאן תיאור קצר על התוכן..."></textarea>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">קובץ וידאו</label>
-            <input type="file" name="video" class="form-control bg-dark text-light border-secondary rounded-3">
+          <!-- Movie-only fields -->
+          <div id="movieFields">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">קובץ וידאו</label>
+              <input type="file" name="video" class="form-control bg-dark text-light border-secondary rounded-3">
+            </div>
+          </div>
+
+          <!-- Series-only fields -->
+          <div id="seriesFields" style="display: none;">
+            <div class="alert alert-info">
+              <i class="bi bi-info-circle"></i> לאחר יצירת הסדרה, תוכל להוסיף פרקים בעמוד הסדרה
+            </div>
+            
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">מספר עונות</label>
+                <input name="seasons" type="number" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="1" value="1">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">סה״כ פרקים (משוער)</label>
+                <input name="totalEpisodes" type="number" class="form-control bg-dark text-light border-secondary rounded-3" placeholder="10" value="10">
+              </div>
+            </div>
           </div>
 
           <div class="mb-4">
@@ -50,10 +102,18 @@
           </div>
 
           <div class="text-center">
-            <button class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">הוסף</button>
+            <button type="submit" class="btn btn-danger px-5 py-2 rounded-pill fw-bold shadow-sm">הוסף תוכן</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+function toggleSeriesFields() {
+  const isSeries = document.getElementById('typeSeries').checked;
+  document.getElementById('movieFields').style.display = isSeries ? 'none' : 'block';
+  document.getElementById('seriesFields').style.display = isSeries ? 'block' : 'none';
+}
+</script>

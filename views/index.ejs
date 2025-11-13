@@ -25,20 +25,134 @@
     <div class="content-row">
       <% continueWatching.forEach(item => { %>
         <div class="content-card">
-          <a href="/player/<%= item._id %>">
+          <% 
+            const playUrl = item.watchEpisode 
+              ? `/player/${item._id}?episode=${item.watchEpisode}` 
+              : `/player/${item._id}`;
+          %>
+          <a href="<%= playUrl %>">
             <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+            <div class="progress-overlay">
+              <div class="progress-bar-overlay" style="width: <%= item.watchProgress || 0 %>%"></div>
+            </div>
           </a>
           <div class="content-card-body">
-            <h5 class="content-card-title"><%= item.title %></h5>
-            <div class="progress" style="height: 5px; margin-bottom: 0.5rem;">
-              <div class="progress-bar bg-danger" style="width: <%= item.watchProgress || 0 %>%"></div>
-            </div>
-            <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+            <h5 class="content-card-title">
+              <%= item.title %>
+              <% if (item.watchEpisode) { %>
+                <span class="text-muted" style="font-size: 0.85rem;"> - פרק <%= item.watchEpisode %></span>
+              <% } %>
+            </h5>
+            <a href="<%= playUrl %>" class="btn btn-play btn-sm">
               <i class="bi bi-play-fill"></i> המשך
             </a>
             <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
               <i class="bi bi-info-circle"></i>
             </a>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<!-- RECOMMENDED FOR YOU -->
+<% if (typeof recommendedContent !== 'undefined' && recommendedContent.length > 0) { %>
+  <section class="feed-section">
+    <h2 class="section-title">
+      <i class="bi bi-star-fill"></i> מומלץ בשבילך
+    </h2>
+    <div class="content-row">
+      <% recommendedContent.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="d-flex gap-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i> נגן
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<!-- MY LIKED CONTENT -->
+<% if (typeof likedContent !== 'undefined' && likedContent.length > 0) { %>
+  <section class="feed-section">
+    <div class="section-title">
+      <i class="bi bi-heart-fill" style="color: var(--netflix-red);"></i>
+      <span>תכנים שאהבתי</span>
+      <a href="/liked" class="view-all-link">צפה בהכל <i class="bi bi-arrow-left"></i></a>
+    </div>
+    <div class="content-row">
+      <% likedContent.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="d-flex gap-2 mt-1">
+              <% 
+                const playUrl = item.type === 'series' && item.episodes && item.episodes.length > 0 
+                  ? `/player/${item._id}?episode=1` 
+                  : `/player/${item._id}`;
+              %>
+              <a href="<%= playUrl %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i> נגן
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+<% } %>
+
+<!-- TV SERIES SECTION -->
+<% if (typeof seriesContent !== 'undefined' && seriesContent.length > 0) { %>
+  <section class="feed-section">
+    <h2 class="section-title">
+      <i class="bi bi-collection-play"></i> סדרות
+    </h2>
+    <div class="content-row">
+      <% seriesContent.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <% if (item.totalEpisodes) { %>
+              <small class="text-muted">
+                <i class="bi bi-film"></i> <%= item.totalEpisodes %> פרקים
+              </small>
+            <% } %>
+            <div class="d-flex gap-2">
+              <% 
+                const playUrl = item.episodes && item.episodes.length > 0 
+                  ? `/player/${item._id}?episode=1` 
+                  : `/player/${item._id}`;
+              %>
+              <a href="<%= playUrl %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i> נגן
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
           </div>
         </div>
       <% }) %>
@@ -52,7 +166,31 @@
     <i class="bi bi-fire"></i> פופולרי עכשיו
   </h2>
   <div class="content-row">
-    <% if (typeof contents !== 'undefined' && contents.length > 0) { %>
+    <% if (typeof popularContent !== 'undefined' && popularContent.length > 0) { %>
+      <% popularContent.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <% if (item.views) { %>
+              <small class="text-muted">
+                <i class="bi bi-eye"></i> <%= item.views %> צפיות
+              </small>
+            <% } %>
+            <div class="d-flex gap-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i> נגן
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    <% } else if (typeof contents !== 'undefined' && contents.length > 0) { %>
       <% contents.forEach(item => { %>
         <div class="content-card">
           <a href="/content/<%= item._id %>">
@@ -119,17 +257,16 @@
   </section>
 <% } %>
 
-<!-- GENRES PREVIEW -->
+<!-- GENRES PREVIEW (Dynamic from DB - 10 newest per genre) -->
 <% 
-const genres = ['Action', 'Drama', 'Comedy', 'Thriller', 'Romance'];
-if (typeof contents !== 'undefined' && contents.length > 0) {
-  genres.forEach(genre => {
-    const genreItems = contents.filter(c => c.genres && c.genres.includes(genre)).slice(0, 6);
-    if (genreItems.length > 0) {
+if (typeof contentByGenre !== 'undefined' && Object.keys(contentByGenre).length > 0) {
+  Object.keys(contentByGenre).forEach(genre => {
+    const genreItems = contentByGenre[genre];
+    if (genreItems && genreItems.length > 0) {
 %>
   <section class="feed-section">
     <h2 class="section-title">
-      <%= genre %>
+      חדש ב<%= genre %>
       <a href="/genre/<%= genre %>" class="float-end text-netflix-red" style="font-size: 0.9rem;">
         צפה בכל <i class="bi bi-chevron-left"></i>
       </a>
@@ -163,6 +300,21 @@ if (typeof contents !== 'undefined' && contents.length > 0) {
 
 <style>
 /* Additional Feed Styles */
+.progress-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: rgba(255,255,255,0.3);
+}
+
+.progress-bar-overlay {
+  height: 100%;
+  background-color: var(--netflix-red);
+  transition: width 0.3s;
+}
+
 .content-hero {
   position: relative;
   height: 70vh;

@@ -16,6 +16,16 @@
           <span><%= genre %></span>
         <% }) %>
       <% } %>
+      <% if (content.imdbRating) { %>
+        <span class="rating-badge imdb-badge">
+          <i class="bi bi-star-fill"></i> IMDB: <%= content.imdbRating %>
+        </span>
+      <% } %>
+      <% if (content.rottenTomatoesRating) { %>
+        <span class="rating-badge rt-badge">
+          <i class="bi bi-award-fill"></i> RT: <%= content.rottenTomatoesRating %>
+        </span>
+      <% } %>
     </div>
 
     <!-- Description -->
@@ -24,10 +34,28 @@
     <% } %>
 
     <!-- Action Buttons -->
-    <div class="d-flex gap-3 mb-3">
-      <a href="/player/<%= content._id %>" class="btn btn-play btn-lg">
-        <i class="bi bi-play-fill"></i> נגן
+    <div class="d-flex gap-3 mb-3 flex-wrap">
+      <% 
+        const firstEpisode = content.type === 'series' && content.episodes && content.episodes.length > 0 ? content.episodes[0] : null;
+        const playUrl = firstEpisode
+          ? `/player/${content._id}?season=${firstEpisode.season}&episode=${firstEpisode.episodeNumber}` 
+          : `/player/${content._id}`;
+        
+        // Check if series is completed
+        const isSeriesCompleted = typeof seriesCompleted !== 'undefined' && seriesCompleted;
+      %>
+      <a href="<%= playUrl %>" class="btn btn-play btn-lg">
+        <% if (isSeriesCompleted) { %>
+          <i class="bi bi-arrow-repeat"></i> צפה מחדש
+        <% } else { %>
+          <i class="bi bi-play-fill"></i> נגן
+        <% } %>
       </a>
+      <% if (!isSeriesCompleted) { %>
+        <button class="btn btn-outline-light btn-lg" onclick="playFromStart('<%= content._id %>')">
+          <i class="bi bi-arrow-counterclockwise"></i> התחל מחדש
+        </button>
+      <% } %>
       <button class="btn btn-info btn-lg" onclick="toggleLike('<%= content._id %>')">
         <% if (liked) { %>
           <i class="bi bi-heart-fill" id="like-icon-<%= content._id %>" style="color: var(--netflix-red)"></i>
@@ -36,6 +64,15 @@
         <% } %>
         אהבתי
       </button>
+      
+      <!-- Admin Controls - Show for series if user is admin -->
+      <% if (content.type === 'series') { %>
+        <% if (user && user.isAdmin) { %>
+          <a href="/admin/series/<%= content._id %>/episodes" class="btn btn-warning btn-lg">
+            <i class="bi bi-pencil-square"></i> ניהול פרקים
+          </a>
+        <% } %>
+      <% } %>
     </div>
 
     <!-- Additional Info -->
@@ -59,30 +96,104 @@
   </div>
 </div>
 
+<!-- Episodes List (for series) -->
+<% if (content.type === 'series' && content.episodes && content.episodes.length > 0) { %>
+  <section class="episodes-section">
+    <h2 class="section-title">
+      <i class="bi bi-list-ol"></i> פרקים
+      <span class="text-muted" style="font-size: 1rem;">(<%= content.episodes.length %> פרקים)</span>
+    </h2>
+    <div class="episodes-grid" id="episodesGrid">
+      <% content.episodes.forEach((episode, index) => { %>
+        <div class="episode-card" data-episode="<%= episode.episodeNumber %>" data-season="<%= episode.season %>">
+          <div class="episode-thumbnail">
+            <img src="<%= episode.imageUrl || content.imageUrl || '/img/placeholder.png' %>" alt="<%= episode.title %>">
+            <div class="episode-play-overlay">
+              <a href="/player/<%= content._id %>?season=<%= episode.season %>&episode=<%= episode.episodeNumber %>" class="btn btn-play">
+                <i class="bi bi-play-fill"></i>
+              </a>
+            </div>
+            <div class="episode-progress-bar" id="episode-progress-s<%= episode.season %>e<%= episode.episodeNumber %>">
+              <div class="episode-progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+          <div class="episode-info">
+            <div class="episode-header">
+              <span class="episode-number"><%= episode.episodeNumber %></span>
+              <h5 class="episode-title"><%= episode.title %></h5>
+            </div>
+            <% if (episode.description) { %>
+              <p class="episode-description"><%= episode.description %></p>
+            <% } %>
+            <div class="episode-meta">
+              <% if (episode.duration) { %>
+                <span><i class="bi bi-clock"></i> <%= episode.duration %></span>
+              <% } %>
+              <% if (episode.airDate) { %>
+                <span><i class="bi bi-calendar3"></i> <%= new Date(episode.airDate).getFullYear() %></span>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  </section>
+  
+  <script>
+  // Load episodes progress
+  (async function loadEpisodesProgress() {
+    try {
+      const res = await fetch('/api/watch/<%= content._id %>/episodes');
+      if (!res.ok) return;
+      const data = await res.json();
+      
+      if (data.episodes && data.episodes.length > 0) {
+        data.episodes.forEach(ep => {
+          const progressBar = document.getElementById(`episode-progress-s${ep.season}e${ep.episodeNumber}`);
+          if (progressBar) {
+            const fill = progressBar.querySelector('.episode-progress-fill');
+            if (fill) {
+              fill.style.width = `${ep.progress || 0}%`;
+              if (ep.progress >= 95) {
+                progressBar.classList.add('completed');
+              }
+            }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error loading episodes progress:', err);
+    }
+  })();
+  </script>
+<% } %>
+
 <!-- Similar Content -->
+<% if (typeof similarContent === 'undefined') { similarContent = []; } %>
 <section class="similar-content mt-5">
   <h2 class="section-title">תכנים דומים</h2>
   <div class="content-row">
-    <% 
-    // זה placeholder - בפועל תשלוף מה-DB
-    for(let i = 0; i < 6; i++) { 
-    %>
-      <div class="content-card">
-        <a href="#">
-          <img src="https://via.placeholder.com/300x450/141414/ffffff?text=Similar+Content" alt="Similar">
-        </a>
-        <div class="content-card-body">
-          <h5 class="content-card-title">תוכן דומה <%= i + 1 %></h5>
-          <div class="d-flex gap-2">
-            <a href="#" class="btn btn-play btn-sm">
-              <i class="bi bi-play-fill"></i>
-            </a>
-            <a href="#" class="btn btn-info btn-sm">
-              <i class="bi bi-info-circle"></i>
-            </a>
+    <% if (similarContent && similarContent.length > 0) { %>
+      <% similarContent.forEach(item => { %>
+        <div class="content-card">
+          <a href="/content/<%= item._id %>">
+            <img src="<%= item.imageUrl || '/img/placeholder.png' %>" alt="<%= item.title %>">
+          </a>
+          <div class="content-card-body">
+            <h5 class="content-card-title"><%= item.title %></h5>
+            <div class="d-flex gap-2">
+              <a href="/player/<%= item._id %>" class="btn btn-play btn-sm">
+                <i class="bi bi-play-fill"></i>
+              </a>
+              <a href="/content/<%= item._id %>" class="btn btn-info btn-sm">
+                <i class="bi bi-info-circle"></i>
+              </a>
+            </div>
           </div>
         </div>
-      </div>
+      <% }) %>
+    <% } else { %>
+      <p class="text-light">אין תכנים דומים זמינים</p>
     <% } %>
   </div>
 </section>
@@ -118,6 +229,25 @@
   text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
 }
 
+.rating-badge {
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0.3rem;
+}
+
+.imdb-badge {
+  background-color: #f5c518;
+  color: #000;
+}
+
+.rt-badge {
+  background-color: #fa320a;
+  color: #fff;
+}
+
 .content-additional-info {
   background-color: rgba(0,0,0,0.6);
   padding: 1.5rem;
@@ -137,6 +267,139 @@
 .similar-content {
   padding: 0 4%;
   margin-bottom: 3rem;
+}
+
+.episodes-section {
+  padding: 2rem 4%;
+  margin-bottom: 3rem;
+}
+
+.episodes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.episode-card {
+  background-color: var(--netflix-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  transition: var(--transition);
+  cursor: pointer;
+  display: flex;
+  gap: 1rem;
+}
+
+.episode-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.episode-thumbnail {
+  position: relative;
+  width: 180px;
+  flex-shrink: 0;
+}
+
+.episode-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.episode-play-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.episode-card:hover .episode-play-overlay {
+  opacity: 1;
+}
+
+.episode-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: rgba(255,255,255,0.3);
+}
+
+.episode-progress-fill {
+  height: 100%;
+  background-color: var(--netflix-red);
+  transition: width 0.3s;
+}
+
+.episode-progress-bar.completed .episode-progress-fill {
+  background-color: #46d369;
+}
+
+.episode-info {
+  padding: 1rem;
+  flex: 1;
+}
+
+.episode-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.episode-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--netflix-light-gray);
+  min-width: 40px;
+}
+
+.episode-title {
+  color: white;
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.episode-description {
+  color: var(--netflix-light-gray);
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.episode-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: var(--netflix-light-gray);
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .episodes-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .episode-thumbnail {
+    width: 120px;
+  }
+  
+  .episode-number {
+    font-size: 1.5rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -178,5 +441,28 @@ function toggleLike(contentId) {
     }
   })
   .catch(err => console.error('Like error:', err));
+}
+
+// Play from start functionality
+async function playFromStart(contentId) {
+  try {
+    // Delete watch history for this content
+    await fetch(`/api/watch/${contentId}`, {
+      method: 'DELETE'
+    });
+    
+    // Navigate to player (episode 1 for series)
+    const isSeries = '<%= content.type %>' === 'series';
+    const hasEpisodes = <%= content.episodes && content.episodes.length > 0 ? 'true' : 'false' %>;
+    const playUrl = (isSeries && hasEpisodes) ? `/player/${contentId}?episode=1` : `/player/${contentId}`;
+    window.location.href = playUrl;
+  } catch (err) {
+    console.error('Play from start error:', err);
+    // Navigate anyway
+    const isSeries = '<%= content.type %>' === 'series';
+    const hasEpisodes = <%= content.episodes && content.episodes.length > 0 ? 'true' : 'false' %>;
+    const playUrl = (isSeries && hasEpisodes) ? `/player/${contentId}?episode=1` : `/player/${contentId}`;
+    window.location.href = playUrl;
+  }
 }
 </script>
