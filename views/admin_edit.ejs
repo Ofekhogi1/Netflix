@@ -1,0 +1,97 @@
+<!-- ADMIN EDIT CONTENT PAGE -->
+<div class="container mt-5">
+  <h2 class="mb-4">עריכת תוכן: <%= content.title %></h2>
+  
+  <form action="/admin/content/<%= content._id %>?_method=PUT" method="POST" enctype="multipart/form-data">
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">כותרת</label>
+        <input type="text" class="form-control" name="title" value="<%= content.title %>" required>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <label class="form-label">סוג</label>
+        <select class="form-control" name="type" required>
+          <option value="movie" <%= content.type === 'movie' ? 'selected' : '' %>>סרט</option>
+          <option value="series" <%= content.type === 'series' ? 'selected' : '' %>>סדרה</option>
+        </select>
+      </div>
+      
+      <div class="col-md-3 mb-3">
+        <label class="form-label">שנה</label>
+        <input type="number" class="form-control" name="year" value="<%= content.year || '' %>">
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">ז'אנרים (מופרדים בפסיק)</label>
+        <input type="text" class="form-control" name="genres" value="<%= content.genres ? content.genres.join(', ') : '' %>">
+      </div>
+      
+      <div class="col-md-6 mb-3">
+        <label class="form-label">במאי</label>
+        <input type="text" class="form-control" name="director" value="<%= content.director || '' %>">
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">שחקנים (מופרדים בפסיק)</label>
+      <input type="text" class="form-control" name="actors" value="<%= content.actors ? content.actors.join(', ') : '' %>">
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">תיאור</label>
+      <textarea class="form-control" name="description" rows="3"><%= content.description || '' %></textarea>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label class="form-label">קובץ וידאו חדש (אופציונלי)</label>
+        <input type="file" class="form-control" name="video" accept="video/*">
+        <% if (content.videoUrl) { %>
+          <small class="text-muted">וידאו נוכחי: <%= content.videoUrl %></small>
+        <% } %>
+      </div>
+      
+      <div class="col-md-6 mb-3">
+        <label class="form-label">תמונה חדשה (אופציונלי)</label>
+        <input type="file" class="form-control" name="image" accept="image/*">
+        <% if (content.imageUrl) { %>
+          <small class="text-muted">תמונה נוכחית: <%= content.imageUrl %></small>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">עדכן תוכן</button>
+      <a href="/content/<%= content._id %>" class="btn btn-secondary">ביטול</a>
+      <button type="button" class="btn btn-danger ms-auto" onclick="deleteContent()">מחק תוכן</button>
+    </div>
+  </form>
+</div>
+
+<script>
+async function deleteContent() {
+  if (!confirm('האם אתה בטוח שברצונך למחוק תוכן זה? פעולה זו אינה הפיכה.')) {
+    return;
+  }
+  
+  try {
+    const res = await fetch('/admin/content/<%= content._id %>', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (res.ok) {
+      alert('התוכן נמחק בהצלחה');
+      window.location.href = '/';
+    } else {
+      alert('שגיאה במחיקת התוכן');
+    }
+  } catch (err) {
+    console.error('Delete error:', err);
+    alert('שגיאה במחיקת התוכן');
+  }
+}
+</script>
